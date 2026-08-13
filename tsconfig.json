@@ -1,11 +1,21 @@
 {
   "compilerOptions": {
-    "target": "ES2017",
+    "target": "ES2022",
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
     "noEmit": true,
+
+    // Beyond `strict`. These catch the mistakes that actually reach production.
+    // noUncheckedIndexedAccess is the important one: it forces you to handle the
+    // case where `rows[0]` is undefined, which is exactly what happens when a
+    // query returns nothing.
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "forceConsistentCasingInFileNames": true,
     "esModuleInterop": true,
     "module": "esnext",
     "moduleResolution": "bundler",

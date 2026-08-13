@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# A newer push makes an in-progress run pointless; cancel it rather than pay for it.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # Full history so the secret scan can see every tracked file.
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Scan for committed credentials
+        run: node scripts/scan-secrets.mjs --all
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Check formatting
+        run: npm run format:check
+
+      - name: Test
+        run: npm run test
+
+      # Dependency vulnerabilities. Set to `high` rather than `moderate` on
+      # purpose: moderate advisories in build-only tooling would otherwise block
+      # every unrelated change. Run `npm audit` locally to see everything.
+      - name: Audit dependencies
+        run: npm audit --audit-level=high
+
+      # Proves the app compiles. No secrets are needed: configuration is
+      # validated at server startup in src/instrumentation.ts, not at build time,
+      # precisely so that CI does not require production credentials.
+      - name: Build
+        run: npm run build

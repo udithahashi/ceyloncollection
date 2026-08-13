@@ -1,0 +1,12 @@
+.next
+out
+build
+coverage
+node_modules
+package-lock.json
+storage
+playwright-report
+test-results
+
+# Preserved exactly as delivered - this is the design reference, not our code.
+reference/public-website.html

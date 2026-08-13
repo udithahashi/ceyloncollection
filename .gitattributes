@@ -1,0 +1,26 @@
+# Normalise line endings to LF everywhere.
+#
+# Windows has core.autocrlf=true by default, which rewrites files to CRLF in the
+# working tree. Prettier is configured for LF, so without this every file would
+# fail `npm run format:check` after a fresh clone, and diffs between this machine
+# and the Linux server would show every line as changed.
+* text=auto eol=lf
+
+# Shell scripts and git hooks must have LF or they fail to execute on Linux.
+*.sh text eol=lf
+.husky/* text eol=lf
+
+# Never touch these.
+*.pdf binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.avif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+
+# Generated: collapse in diffs and exclude from language statistics.
+package-lock.json -diff linguist-generated
+reference/** linguist-vendored

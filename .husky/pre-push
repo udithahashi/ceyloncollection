@@ -1,0 +1,9 @@
+#!/usr/bin/env sh
+
+# Slower, whole-project checks. These run before code leaves your machine, so a
+# broken build is caught here rather than by CI five minutes later.
+#
+# To push anyway in an emergency:  git push --no-verify
+
+npm run typecheck || exit 1
+npm run test || exit 1

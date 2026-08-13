@@ -1,36 +1,84 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Ceylon Collection
 
-## Getting Started
+Private back office for a Sri Lankan clothing import business in Qatar.
 
-First, run the development server:
+The business imports good-quality Sri Lankan fabric and clothing and sells it to
+customers in Qatar. Demand is discovered by posting on social media and talking to
+people, which produces a steady trickle of enquiries across Facebook, WhatsApp,
+Instagram, Imo and Viber. This application is where those enquiries become
+structured data: who asked, for what, in which size and fabric, how urgently, and
+what happened next.
+
+The point is to be able to answer, with evidence, the question that decides each
+import order: **what should I actually buy, and how much of it?**
+
+There is no public website yet. Everything here is the admin side.
+
+## Quick start
+
+You need [Node.js 22+](https://nodejs.org) and
+[Docker Desktop](https://docker.com/products/docker-desktop).
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install          # install dependencies
+npm run setup        # create .env.local with generated secrets (skips if it exists)
+npm run dev:up       # start PostgreSQL and Redis in Docker
+npm run doctor       # confirm everything is wired up correctly
+npm run dev          # start the app at http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+If any step misbehaves, run `npm run doctor`. It checks the things that actually
+go wrong and prints the exact command to fix each one.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Commands
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Command               | What it does                                                   |
+| --------------------- | -------------------------------------------------------------- |
+| `npm run dev`         | Start the app with hot reload                                  |
+| `npm run dev:pretty`  | Same, with human-readable log output                           |
+| `npm run doctor`      | Diagnose your local environment                                |
+| `npm run dev:up`      | Start the PostgreSQL and Redis containers                      |
+| `npm run dev:down`    | Stop them, keeping the data                                    |
+| `npm run dev:destroy` | Stop them and **delete all local data**                        |
+| `npm run dev:reset`   | Destroy, recreate, and wait until the database is ready        |
+| `npm run dev:logs`    | Follow the container logs                                      |
+| `npm run dev:status`  | Show container status                                          |
+| `npm run verify`      | Typecheck, lint, format check, and run tests - run before push |
+| `npm run test`        | Run unit tests once                                            |
+| `npm run test:watch`  | Re-run tests as you edit                                       |
+| `npm run build`       | Production build                                               |
 
-## Learn More
+## Documentation
 
-To learn more about Next.js, take a look at the following resources:
+| Document                                           | Read it when                                            |
+| -------------------------------------------------- | ------------------------------------------------------- |
+| [docs/CONCEPTS.md](docs/CONCEPTS.md)               | You want to understand the stack and why it is this way |
+| [docs/LOCAL-DEV.md](docs/LOCAL-DEV.md)             | You are working day to day                              |
+| [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Something is broken                                     |
+| [docs/GLOSSARY.md](docs/GLOSSARY.md)               | You hit a term you do not recognise                     |
+| [AGENTS.md](AGENTS.md)                             | Project conventions and rules, for humans and AI alike  |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Stack
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Next.js 16 (App Router) and React 19 for both the pages and the server logic,
+PostgreSQL 17 through Drizzle ORM, Redis for sessions and rate limiting, Tailwind
+CSS 4 for styling, and Better Auth for authentication. It runs as a single
+application: there is no separate API service, and no REST API exposed to the
+browser. Pages read from the database directly on the server, and forms submit to
+Server Actions.
 
-## Deploy on Vercel
+`docs/CONCEPTS.md` explains what each of those words means and why it was chosen.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Security posture
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+This holds real customers' names and phone numbers, so it is built as a closed
+system rather than a public app with a login page bolted on:
+
+- No public sign-up. Accounts are created by invitation only, with TOTP two-factor.
+- No browser-facing REST API. The only HTTP endpoints are the HMAC-signed n8n
+  integration routes, bound to the internal Docker network.
+- Every input validated with Zod at the boundary; every write authorised and
+  recorded in an audit log.
+- Uploaded images are re-encoded server-side, which strips EXIF and GPS data and
+  neutralises files that merely pretend to be images.
+- Secrets never enter git: a pre-commit hook scans staged changes and blocks them.

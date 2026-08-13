@@ -1,0 +1,10 @@
+#!/usr/bin/env sh
+
+# Fast checks that run on every commit. Anything slow belongs in pre-push.
+
+# 1. Never let a credential into history. This is not recoverable after the fact,
+#    so it runs first and blocks hardest.
+node scripts/scan-secrets.mjs || exit 1
+
+# 2. Format and lint only the files being committed.
+npx lint-staged

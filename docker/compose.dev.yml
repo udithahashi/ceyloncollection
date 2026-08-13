@@ -1,0 +1,59 @@
+# Local development dependencies only.
+#
+# This file runs PostgreSQL and Redis on your PC so you never have to install or
+# configure either of them by hand. Next.js itself does NOT run in Docker during
+# development - it runs natively via `npm run dev` so you keep instant hot reload.
+#
+# Start it with:  npm run dev:up
+# Stop it with:   npm run dev:down
+#
+# Ports are deliberately offset from the defaults (5433 instead of 5432, 6380
+# instead of 6379) so they can never collide with Laragon's MySQL or with any
+# other Postgres/Redis you may install later.
+
+name: ceyloncollection-dev
+
+services:
+  db:
+    image: postgres:17
+    container_name: cc-dev-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-ceylon}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ceylon_dev_password}
+      POSTGRES_DB: ${POSTGRES_DB:-ceyloncollection}
+      # Keep the database itself in UTC. The app converts to Asia/Qatar for
+      # display and for date grouping in reports.
+      TZ: UTC
+      PGTZ: UTC
+    ports:
+      - "5433:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ceylon} -d ${POSTGRES_DB:-ceyloncollection}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  cache:
+    image: redis:8-alpine
+    container_name: cc-dev-cache
+    restart: unless-stopped
+    # Persist to disk so local rate-limit counters and sessions survive a restart.
+    command: ["redis-server", "--appendonly", "yes", "--save", "60", "1"]
+    ports:
+      - "6380:6379"
+    volumes:
+      - cache_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  db_data:
+  cache_data:
