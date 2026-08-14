@@ -49,7 +49,12 @@ These have already caused mistakes. Check them before writing code.
    writes happen in Server Actions. The only HTTP endpoints are the HMAC-signed
    n8n integration routes, which are reachable on the internal Docker network only.
 2. **Never read `process.env` directly.** Import `{ env }` from `@/lib/env`, which
-   is validated at startup. ESLint enforces this.
+   is validated at startup. ESLint enforces this. `@/lib/env` is `server-only`, and
+   so is everything that imports it - including `@/lib/time`. A `'use client'` file
+   that reaches either, even through three layers of innocent-looking helpers, fails
+   the build. When a client component needs a constant that lives beside server code,
+   put the constant in its own dependency-free module rather than importing the
+   server module for it: see `features/analytics/presets.ts`.
 3. **Validate every input with Zod at the trust boundary**, inside the Server
    Action, before it reaches the database. A Server Action is a public HTTP
    endpoint whatever it looks like in the code.

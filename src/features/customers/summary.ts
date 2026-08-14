@@ -8,11 +8,14 @@
  * number in a view needs a migration to change; a number here needs an edit and a
  * test.
  *
- * It is also pure. Given the same summary and the same "today" it returns the same
- * answer, so the tests below are the specification and there is nothing to mock.
+ * It is also pure, and pure in a strict sense: it takes the number of quiet days
+ * rather than a date, so it needs neither a clock nor a timezone. That is not
+ * fastidiousness. Reading the configured timezone would pull `@/lib/env` in behind it,
+ * which would make this module - and every component that imports a threshold from it -
+ * server-only. Counting the days is the caller's job; deciding what they mean is this
+ * module's.
  */
 import type { BadgeTone } from '@/lib/theme/tones';
-import { daysSince } from '@/lib/time';
 
 /**
  * Days of silence on an open enquiry before it needs chasing.
@@ -91,7 +94,11 @@ export interface ActionInput {
   openRequests: number;
   /** Enquiries at a ready-to-buy urgency that are still open. */
   openReadyToBuyRequests: number;
-  lastContactAt: string | null;
+  /**
+   * Calendar days since they last made contact, counted in business time by the
+   * caller. Null when they have never been in touch.
+   */
+  quietForDays: number | null;
   /** Whether the most recent enquiry ended at a status marked as a sale. */
   latestIsWon: boolean;
   /** Whether the most recent enquiry ended at any terminal status. */
@@ -104,7 +111,7 @@ export interface ActionInput {
  * The order of the checks is the priority order: a person who said "I'll take it"
  * outranks a person who has gone quiet, however long the quiet one has waited.
  */
-export function suggestedAction(input: ActionInput, now: Date = new Date()): CustomerAction {
+export function suggestedAction(input: ActionInput): CustomerAction {
   if (input.totalRequests === 0) return 'none';
 
   // Everything closed. Which way it closed decides the label.
@@ -114,7 +121,7 @@ export function suggestedAction(input: ActionInput, now: Date = new Date()): Cus
 
   if (input.openReadyToBuyRequests > 0) return 'hot';
 
-  const quietFor = input.lastContactAt === null ? 0 : daysSince(input.lastContactAt, now);
+  const quietFor = input.quietForDays ?? 0;
 
   if (quietFor > DORMANT_AFTER_DAYS) return 'dormant';
   if (quietFor >= FOLLOW_UP_AFTER_DAYS) return 'follow_up';

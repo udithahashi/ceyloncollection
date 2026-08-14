@@ -13,9 +13,26 @@
  * Coming from Laravel, this is `config/*.php` plus a strict validation pass over
  * `.env`, with the difference that failure happens at boot instead of at 3am.
  *
- * SERVER ONLY. Never import this from a client component. Anything the browser
- * legitimately needs must be a `NEXT_PUBLIC_*` variable, read separately.
+ * SERVER ONLY, and enforced rather than requested - see the `server-only` import
+ * below. Anything the browser legitimately needs must be a `NEXT_PUBLIC_*`
+ * variable, read separately.
  */
+
+/*
+ * Turns "a client component imported this" from a runtime error into a build error.
+ *
+ * Without it the mistake is almost always indirect and the message is misleading: a
+ * client component imports a pure-looking helper, that helper imports @/lib/time for
+ * one date function, @/lib/time reads this module, and the browser gets a copy that
+ * validates `process.env` - which Turbopack has replaced with the public variables
+ * only. The page then dies with "DATABASE_URL is required", pointing at the
+ * environment rather than at the import that does not belong.
+ *
+ * This module is a no-op in Node and throws when bundled for the browser, so the
+ * failure now names the file that crossed the line.
+ */
+import 'server-only';
+
 import { parseEnv } from './schema';
 
 export type { Env } from './schema';

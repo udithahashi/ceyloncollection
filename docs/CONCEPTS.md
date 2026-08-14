@@ -464,6 +464,33 @@ deploying and forgetting to set `APP_ENV=production`, silently disabling every
 check - is closed by a rule that rejects a non-local `APP_URL` while `APP_ENV` is
 still `development`. Both directions are tested in `src/lib/env/schema.test.ts`.
 
+### The configuration is server-only, and the compiler enforces it
+
+`src/lib/env/index.ts` imports the `server-only` package. That one line converts a
+nasty class of mistake from a runtime error into a build error.
+
+The mistake is never obvious, because it is never direct. A `'use client'` component
+imports a constant from a module that looks like pure business rules; that module
+imports one date helper from `@/lib/time`; `@/lib/time` reads the configured timezone
+from `@/lib/env`. The browser copy of that chain validates `process.env`, which the
+bundler has replaced with the `NEXT_PUBLIC_*` variables only, and the page dies with
+`DATABASE_URL is required` - pointing at the environment, which is fine, instead of at
+the import, which is not. Both leaks that existed were found this way.
+
+The build now names the offending file and prints the import trace. The rule to follow:
+when a client component needs a constant that lives next to server code, move the
+constant into a module with no imports of its own - `features/analytics/presets.ts` is
+the pattern - rather than reaching into the server module for it.
+
+Two consequences to know about, both because the real `server-only` package throws
+unless it is resolved under React's `react-server` condition:
+
+- The npm scripts that run TypeScript through `tsx` pass `--conditions=react-server`.
+  If a new script fails with "cannot be imported from a Client Component module", it is
+  missing that flag, not doing anything wrong.
+- Vitest aliases the package to `tests/stubs/server-only.ts`, a no-op. Tests are server
+  code by definition.
+
 ## Where things live
 
 ```

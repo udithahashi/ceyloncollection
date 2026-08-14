@@ -19,7 +19,7 @@ import { can } from '@/lib/auth/roles';
 import { authorize } from '@/lib/auth/session';
 import { formatPhone } from '@/lib/phone';
 import { isBadgeTone, type BadgeTone } from '@/lib/theme/tones';
-import { formatDate, formatDaysSince } from '@/lib/time';
+import { daysSince, formatDate, formatDaysSince } from '@/lib/time';
 
 export async function generateMetadata({ params }: PageProps<'/customers/[id]'>) {
   const { id } = await params;
@@ -49,7 +49,7 @@ export default async function CustomerPage({ params }: PageProps<'/customers/[id
     totalRequests: customer.totalRequests,
     openRequests: customer.openRequests,
     openReadyToBuyRequests: customer.openReadyToBuyRequests,
-    lastContactAt: customer.lastContactAt,
+    quietForDays: customer.lastContactAt === null ? null : daysSince(customer.lastContactAt),
     latestIsWon: customer.latestStatusIsWon ?? false,
     latestIsTerminal: customer.latestStatusIsTerminal ?? false,
   });

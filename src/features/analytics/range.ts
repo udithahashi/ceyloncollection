@@ -31,25 +31,11 @@ import {
   todayInBusinessTime,
 } from '@/lib/time';
 
-/**
- * The offered periods, in days.
- *
- * `null` means "everything", which matters early on: with three weeks of data, a
- * 30-day window is the whole history and a report that defaults to it looks broken
- * the moment it drops the first week.
- */
-export const rangePresets = {
-  '7d': { label: 'Last 7 days', days: 7 },
-  '30d': { label: 'Last 30 days', days: 30 },
-  '90d': { label: 'Last 90 days', days: 90 },
-  '12m': { label: 'Last 12 months', days: 365 },
-  all: { label: 'All time', days: null },
-  custom: { label: 'Custom dates', days: null },
-} as const satisfies Record<string, { label: string; days: number | null }>;
+import { DEFAULT_PRESET, rangePresetKeys, rangePresets, type RangePreset } from './presets';
 
-export type RangePreset = keyof typeof rangePresets;
-
-export const DEFAULT_PRESET: RangePreset = '30d';
+// Re-exported so a server module has one import for the whole concept. The client must
+// import from './presets' directly: this file reaches the database's timezone config.
+export { DEFAULT_PRESET, rangePresets, type RangePreset };
 
 /** `YYYY-MM-DD`, or nothing. */
 const day = z
@@ -66,7 +52,7 @@ const day = z
  */
 export const rangeSchema = z.object({
   range: z
-    .enum(Object.keys(rangePresets) as [RangePreset, ...RangePreset[]])
+    .enum(rangePresetKeys)
     .optional()
     .catch(undefined)
     .transform((value) => value ?? DEFAULT_PRESET),

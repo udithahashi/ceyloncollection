@@ -15,7 +15,7 @@ import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { formatPhone } from '@/lib/phone';
 import { isBadgeTone, type BadgeTone } from '@/lib/theme/tones';
-import { formatDate, formatDaysSince } from '@/lib/time';
+import { daysSince, formatDate, formatDaysSince } from '@/lib/time';
 
 import type { CustomerRow } from '../queries';
 import {
@@ -50,7 +50,9 @@ export function CustomerTable({ rows }: { rows: readonly CustomerRow[] }) {
               totalRequests: row.totalRequests,
               openRequests: row.openRequests,
               openReadyToBuyRequests: row.openReadyToBuyRequests,
-              lastContactAt: row.lastContactAt,
+              // Counted here, in business time, because the policy module is deliberately
+              // free of any dependency on the clock or the timezone.
+              quietForDays: row.lastContactAt === null ? null : daysSince(row.lastContactAt),
               latestIsWon: row.latestStatusIsWon ?? false,
               latestIsTerminal: row.latestStatusIsTerminal ?? false,
             });

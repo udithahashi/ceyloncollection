@@ -15,6 +15,8 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(import.meta.dirname, './src'),
+      // Tests are server code. See the stub for why the real package cannot be used.
+      'server-only': path.resolve(import.meta.dirname, './tests/stubs/server-only.ts'),
     },
   },
 });

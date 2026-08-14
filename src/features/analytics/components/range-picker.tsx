@@ -19,7 +19,10 @@ import { Button } from '@/components/ui/button';
 import { controlClasses } from '@/components/ui/field';
 import { cn } from '@/lib/cn';
 
-import { rangePresets, type DateRange, type RangePreset } from '../range';
+// From './presets', not './range': this is a client component, and `range.ts` resolves
+// dates in the business timezone, which reaches the server-only environment config.
+import { DEFAULT_PRESET, rangePresets, type RangePreset } from '../presets';
+import type { DateRange } from '../range';
 
 export function RangePicker({
   action,
@@ -61,7 +64,9 @@ export function RangePicker({
                 aria-pressed={selected}
                 onClick={() => {
                   setCustom(false);
-                  go(key === '30d' ? '' : `range=${key}`);
+                  // The default period is the bare URL, so the common case has no query
+                  // string to read or share.
+                  go(key === DEFAULT_PRESET ? '' : `range=${key}`);
                 }}
                 className={cn(
                   'rounded-control px-2.5 py-1 text-xs font-medium transition-colors',
