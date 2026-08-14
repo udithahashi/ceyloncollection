@@ -367,6 +367,80 @@ Sub-category slugs are unique **per category** rather than globally. That is not
 oversight: the business's own list has "Batik Saree" under both Batik Wear and
 Sarees & Osari, because one is a craft and the other a garment type.
 
+## Analytics: boards, not one dashboard
+
+Charts are drawn with **Chart.js**, and the reports are split into **boards** - one
+subject per page. Demand exists now; money, stock and orders are stubs on
+`/analytics` with a "Planned" badge.
+
+That split is the important decision, and it is a decision about the future rather
+than about today. Leads are the only thing measured so far, but income, spending,
+landed cost, stock and margin are all coming. The natural way to add them is a
+section per subject on one growing dashboard, and the reliable result of that is
+thirty charts where the important one is below the fold - and where adding a chart
+means arguing about what to remove. A board is a sitting: "how is demand?" and "did
+last month make money?" are asked at different times, over different periods, and
+often by different people.
+
+So the code is split the same way:
+
+| Where                              | What lives there                                    |
+| ---------------------------------- | --------------------------------------------------- |
+| `src/features/analytics/`          | the presentation layer, borrowed by every board     |
+| `src/features/analytics/boards.ts` | the registry: which boards exist, which are planned |
+| `src/features/leads/analytics.ts`  | the SQL behind the demand board                     |
+
+Whoever owns the tables owns the queries: `features/leads/analytics.ts` holds the
+demand SQL, and a future `features/stock/analytics.ts` will hold its own. What is
+shared is everything that is not about leads:
+
+- **The period** (`range.ts`). Every board is read through the same control, and every
+  range knows the equal-length period before it, so any figure can show a change
+  without each board inventing its own idea of "before". Presets are stored as
+  `?range=90d` rather than two dates, so a bookmark still means "last 90 days" next
+  month.
+- **The long tail** (`slice.ts`). There are 200-odd sub-categories, and a chart with
+  200 bars communicates nothing. `topSlices` keeps the leading few and folds the rest
+  into one, keeping the true total so percentages still refer to everything. Expense
+  categories and suppliers will have the same shape of tail.
+- **Time buckets** (`buckets.ts`). The bucket size follows the span - days, weeks,
+  then months - and every bucket in the period is produced, **including the empty
+  ones**. Postgres returns no row for a silent week, and a line drawn from those rows
+  joins the week before to the week after, which reads as steady demand across a gap
+  where there was none.
+- **The chart itself** (`components/`). One client component talks to Chart.js. Boards
+  describe charts as plain data - kind, labels, values, a unit - because a Server
+  Component can only pass serialisable props, and Chart.js configuration is full of
+  callbacks. Colours are read from the live CSS variables rather than imported, so a
+  chart cannot disagree with the page around it and both themes work with no chart
+  code aware there are two.
+
+Three habits in there are worth keeping when the money and stock boards arrive.
+
+**Aggregate in Postgres.** Every figure is a `count`, `sum` or `filter (where ...)`
+over an indexed column. Fetching rows and counting them in JavaScript works for the
+fortnight when there are forty of them and is slowest in exactly the situation the
+business is working towards.
+
+**Group by the day in Qatar, not in UTC.** `contacted_at` is stored as `timestamptz`;
+grouping it without `at time zone` first puts a 01:00 Doha message on the previous
+day, so every daily figure is quietly wrong by however many messages arrive before
+03:00.
+
+**A number needs its comparison, and a chart needs its caption.** Metrics show the
+change against the previous period, but never colour it green or red on their own -
+"down" is good news for expenses and bad news for income, so the caller says which
+direction is favourable. Charts that leave rows out say how many: the sub-category
+chart drops enquiries that named no sub-category, and prints the count underneath,
+because a large number there is itself the finding.
+
+Charts are canvases, which are invisible to a screen reader, so every one renders the
+same numbers as a visually hidden table beside it.
+
+For something to look at before the first real enquiry, `npm run db:demo` invents
+about 140 leads over 90 days, and `npm run db:demo -- clear` removes them again. It
+refuses to run against a production deployment.
+
 ## Configuration
 
 `src/lib/env/schema.ts` declares every variable the app needs, with rules. On

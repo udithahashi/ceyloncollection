@@ -66,11 +66,22 @@ jobs:
           BETTER_AUTH_SECRET: ci-only-not-a-real-secret-000000000000
           N8N_WEBHOOK_SECRET: ci-only-not-a-real-secret-000000000000
 
-      # Dependency vulnerabilities. Set to `high` rather than `moderate` on
-      # purpose: moderate advisories in build-only tooling would otherwise block
-      # every unrelated change. Run `npm audit` locally to see everything.
-      - name: Audit dependencies
-        run: npm audit --audit-level=high
+      # Dependency vulnerabilities in what actually ships.
+      #
+      # `--omit=dev` and `--audit-level=high` are both deliberate, and both cost
+      # something, so they are worth explaining.
+      #
+      # Code that only ever runs on a developer's machine or in this runner is a
+      # different risk from code serving requests: it handles no customer data and
+      # is reachable by nobody. `@better-auth/cli` - one script, `auth:schema-check`
+      # - currently drags in its own older copy of better-auth plus prisma-ast and
+      # lodash, which between them carry a critical and two high advisories. None of
+      # those files is in the server bundle, and gating on them would mean either
+      # ignoring a permanently red CI or dropping a useful tool.
+      #
+      # Run `npm audit` with no flags locally to see everything, dev included.
+      - name: Audit runtime dependencies
+        run: npm audit --omit=dev --audit-level=high
 
       # Proves the app compiles. No secrets are needed: configuration is
       # validated at server startup in src/instrumentation.ts, not at build time,

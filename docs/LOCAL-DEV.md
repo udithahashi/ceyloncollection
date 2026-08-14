@@ -31,6 +31,18 @@ sub-categories, the 122 tags - into the taxonomy tables. It only ever inserts wh
 is missing, so running it again after you have edited a list on the Taxonomy page
 changes nothing. It prints what it inserted and what was already there.
 
+If you want something on the charts before the first real enquiry arrives, invent
+some:
+
+```bash
+npm run db:demo             # ~140 leads over the last 90 days
+npm run db:demo -- 400      # more of them
+npm run db:demo -- clear    # remove every invented row again
+```
+
+Every row it writes is named `[demo]`, which is how `clear` finds its own and nothing
+else. It refuses to run when `APP_ENV=production`.
+
 Sign in at http://localhost:3000, and you will be asked to set up an authenticator
 app straight away - two-factor is required for every account, including yours. Any
 TOTP app works: Google Authenticator, 1Password, Bitwarden. Keep the backup codes it

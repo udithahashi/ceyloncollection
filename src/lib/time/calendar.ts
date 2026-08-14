@@ -16,7 +16,14 @@
  * local timezone. The env-bound convenience wrappers live in ./index.ts.
  */
 import { TZDate } from '@date-fns/tz';
-import { differenceInCalendarDays, endOfDay, startOfDay, subDays } from 'date-fns';
+import {
+  addDays,
+  differenceInCalendarDays,
+  endOfDay,
+  startOfDay,
+  startOfWeek,
+  subDays,
+} from 'date-fns';
 
 /** Reinterprets an instant in the given timezone without shifting the instant. */
 export function inZone(instant: Date | string | number, timeZone: string): TZDate {
@@ -103,6 +110,29 @@ export function isSameDayInZone(
   timeZone: string
 ): boolean {
   return daysBetweenInZone(a, b, timeZone) === 0;
+}
+
+/**
+ * The Monday of the week a `YYYY-MM-DD` date falls in, in `timeZone`.
+ *
+ * Monday because that is where Postgres's `date_trunc('week', ...)` starts, and a
+ * weekly chart whose spine disagrees with its data by one day shows every bucket empty.
+ */
+export function startOfCalendarWeekInZone(day: string, timeZone: string): string {
+  const local = inZone(startOfCalendarDayInZone(day, timeZone), timeZone);
+  return calendarDateInZone(startOfWeek(local, { weekStartsOn: 1 }), timeZone);
+}
+
+/**
+ * A `YYYY-MM-DD` date moved by whole calendar days, still as `YYYY-MM-DD`.
+ *
+ * Calendar arithmetic rather than adding 86,400,000 milliseconds: those two agree in
+ * Qatar, which has no daylight saving, and disagree twice a year anywhere that does.
+ * Reports are read from other timezones, and a report that loses a day in October is
+ * worse than one that is simply wrong.
+ */
+export function shiftCalendarDayInZone(day: string, by: number, timeZone: string): string {
+  return calendarDateInZone(addDays(startOfCalendarDayInZone(day, timeZone), by), timeZone);
 }
 
 /**

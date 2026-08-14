@@ -27,7 +27,7 @@ export type NavItem = {
    * the real route tree, so this widens by itself as pages are added - and a
    * typo becomes a type error rather than a broken link.
    */
-  href?: '/' | '/team' | '/taxonomy' | '/leads' | '/customers';
+  href?: '/' | '/team' | '/taxonomy' | '/leads' | '/customers' | '/analytics';
   /** Shown as a hint under the label. */
   description?: string;
   /**
@@ -54,14 +54,21 @@ export type NavSection = {
 export const navSections: readonly NavSection[] = [
   {
     heading: 'Overview',
-    items: [{ label: 'Dashboard', icon: LayoutDashboard, href: '/' }],
+    items: [
+      { label: 'Dashboard', icon: LayoutDashboard, href: '/' },
+      /*
+       * Alongside the dashboard rather than under Demand: analytics is one entry that
+       * opens onto several boards - demand now, money and stock later - and filing it
+       * under leads would imply the charts are only ever about leads.
+       */
+      { label: 'Analytics', icon: BarChart3, href: '/analytics', permission: 'analytics:read' },
+    ],
   },
   {
     heading: 'Demand',
     items: [
       { label: 'Leads', icon: Inbox, href: '/leads', permission: 'leads:read' },
       { label: 'Customers', icon: Users, href: '/customers', permission: 'customers:read' },
-      { label: 'Analytics', icon: BarChart3, permission: 'analytics:read' },
     ],
   },
   {

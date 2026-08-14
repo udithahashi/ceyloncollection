@@ -18,14 +18,15 @@ Read `docs/CONCEPTS.md` for the architecture and `docs/LOCAL-DEV.md` for command
 
 ## Stack
 
-| Concern    | Choice                                              |
-| ---------- | --------------------------------------------------- |
-| Framework  | Next.js 16 App Router, React 19.2, TypeScript       |
-| Database   | PostgreSQL 17 via Drizzle ORM                       |
-| Cache      | Redis, for sessions and rate limiting               |
-| Styling    | Tailwind CSS 4 with CSS-variable design tokens      |
-| Auth       | Better Auth, invite-only, TOTP two-factor           |
-| Automation | n8n on the same VPS, over the internal network only |
+| Concern    | Choice                                               |
+| ---------- | ---------------------------------------------------- |
+| Framework  | Next.js 16 App Router, React 19.2, TypeScript        |
+| Database   | PostgreSQL 17 via Drizzle ORM                        |
+| Cache      | Redis, for sessions and rate limiting                |
+| Styling    | Tailwind CSS 4 with CSS-variable design tokens       |
+| Charts     | Chart.js, one board per subject, never one dashboard |
+| Auth       | Better Auth, invite-only, TOTP two-factor            |
+| Automation | n8n on the same VPS, over the internal network only  |
 
 ## Next.js 16 specifics that differ from older training data
 
@@ -83,6 +84,23 @@ One set of components serves both, so:
   if a token is unreachable from any component.
 - `BrandMark` is the one deliberate exception: a logotype names Marcellus
   directly, because identity should not change with the theme.
+
+## Analytics
+
+Reports are **boards**: one subject per page, at `/analytics/<board>`. Demand exists;
+money, stock and orders are declared in `src/features/analytics/boards.ts` and shown
+as planned. Never add a chart about one subject to another subject's board, and never
+grow the dashboard into a single page of everything - that is the failure this
+structure exists to prevent.
+
+- The presentation layer is shared: `range.ts` (period and previous-period),
+  `slice.ts` (Top-N with an honest total), `buckets.ts` (grain and zero-filled
+  spines), `components/` (the Chart.js client component and the cards).
+- The SQL belongs to the domain that owns the tables: `features/leads/analytics.ts`
+  for demand, and a sibling in each feature as it arrives.
+- Aggregate in Postgres, never in JavaScript. Group days with `at time zone`.
+- Charts take serialisable specs only, and read colour from CSS variables.
+- `npm run db:demo` invents leads to look at; `npm run db:demo -- clear` removes them.
 
 ## Layout
 

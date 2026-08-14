@@ -18,7 +18,9 @@ import {
   endOfCalendarDayInZone,
   endOfDayInZone,
   isSameDayInZone,
+  shiftCalendarDayInZone,
   startOfCalendarDayInZone,
+  startOfCalendarWeekInZone,
   startOfDayInZone,
 } from './calendar';
 
@@ -61,6 +63,13 @@ export const todayInBusinessTime = () => calendarDateInZone(new Date(), APP_TIME
 /** The date `days` ago in business time, as `YYYY-MM-DD`. For "quiet for a week". */
 export const calendarDaysAgo = (days: number, now?: Date) =>
   calendarDaysAgoInZone(days, APP_TIMEZONE, now);
+
+/** A `YYYY-MM-DD` date moved by whole business-time days. */
+export const shiftCalendarDay = (day: string, by: number) =>
+  shiftCalendarDayInZone(day, by, APP_TIMEZONE);
+
+/** The Monday of the business-time week containing a `YYYY-MM-DD` date. */
+export const startOfCalendarWeek = (day: string) => startOfCalendarWeekInZone(day, APP_TIMEZONE);
 
 /**
  * Formatters are constructed once and reused. Building an Intl.DateTimeFormat is
