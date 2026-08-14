@@ -1,26 +1,357 @@
 @import 'tailwindcss';
 
+/*
+ * THEME TOKENS
+ *
+ * These values are mirrored from src/lib/theme/tokens.ts, which is the source of
+ * truth. src/lib/theme/tokens.test.ts parses this file and fails if the two ever
+ * disagree, so edit the TypeScript first and follow it here.
+ *
+ * The theme is selected by a `data-theme` attribute that the server renders onto
+ * <html>. That is what prevents a flash of the wrong theme: the correct colours
+ * are in the very first byte of HTML, with no client-side JavaScript involved.
+ */
+
+/* Back office, dark - the default. */
+:root,
+[data-theme='admin-dark'] {
+  --surface-page: #0f1825;
+  --surface-panel: #1a2738;
+  --surface-panel-raised: #213247;
+  --surface-inset: #0b121c;
+  --surface-sidebar: #121f31;
+  --surface-sidebar-active: #1e2e43;
+
+  --ink-primary: #f5f1eb;
+  --ink-secondary: #aab3bf;
+  --ink-accent: #d2a34a;
+  --ink-on-sidebar: #f5f1eb;
+  --ink-on-sidebar-muted: #aab3bf;
+
+  --line-subtle: #2b394a;
+  --line-strong: #757e8a;
+  --line-focus: #d2a34a;
+
+  --action-primary: #d2a34a;
+  --action-primary-hover: #e0b45e;
+  --action-on-primary: #0f1825;
+  --action-secondary: #1a2738;
+  --action-secondary-hover: #213247;
+  --action-on-secondary: #f5f1eb;
+  --action-secondary-line: #757e8a;
+  --action-soft: #2a2415;
+  --action-on-soft: #e8c888;
+
+  --status-success-ink: #5aaa81;
+  --status-success-bg: #16302a;
+  --status-success-line: #2e6b50;
+  --status-warning-ink: #d4a449;
+  --status-warning-bg: #33290f;
+  --status-warning-line: #6b5520;
+  --status-error-ink: #d98282;
+  --status-error-bg: #34191b;
+  --status-error-line: #7a3b3b;
+  --status-info-ink: #7fb3dd;
+  --status-info-bg: #12283a;
+  --status-info-line: #2f5b7d;
+
+  --chart-1: #d2a34a;
+  --chart-2: #93c6b8;
+  --chart-3: #b6d59e;
+  --chart-4: #f1d6d0;
+  --chart-5: #f7ecd5;
+  --chart-6: #a76661;
+  --chart-7: #6688c3;
+  --chart-8: #a38cc7;
+
+  /* Tells the browser to render native controls and scrollbars dark. */
+  color-scheme: dark;
+}
+
+/* Back office, light. */
+[data-theme='admin-light'] {
+  --surface-page: #f8f9fa;
+  --surface-panel: #ffffff;
+  --surface-panel-raised: #f2f4f6;
+  --surface-inset: #f2f4f6;
+  --surface-sidebar: #18304d;
+  --surface-sidebar-active: #1e3752;
+
+  --ink-primary: #202733;
+  --ink-secondary: #656e81;
+  --ink-accent: #966413;
+  --ink-on-sidebar: #faf7f2;
+  --ink-on-sidebar-muted: #aab3bf;
+
+  --line-subtle: #e2e6ea;
+  --line-strong: #878a8c;
+  --line-focus: #9c6814;
+
+  --action-primary: #18304d;
+  --action-primary-hover: #10243b;
+  --action-on-primary: #ffffff;
+  --action-secondary: #ffffff;
+  --action-secondary-hover: #f2f4f6;
+  --action-on-secondary: #18304d;
+  --action-secondary-line: #878a8c;
+  --action-soft: #f5e9ce;
+  --action-on-soft: #202733;
+
+  --status-success-ink: #347556;
+  --status-success-bg: #e8f3ee;
+  --status-success-line: #a8cfbc;
+  --status-warning-ink: #8c621a;
+  --status-warning-bg: #fbf1dc;
+  --status-warning-line: #e0c48a;
+  --status-error-ink: #a74d4d;
+  --status-error-bg: #fbeaea;
+  --status-error-line: #e5b4b4;
+  --status-info-ink: #2e6da5;
+  --status-info-bg: #e7f0f8;
+  --status-info-line: #a9c8e0;
+
+  --chart-1: #8d5e12;
+  --chart-2: #567c6e;
+  --chart-3: #957f59;
+  --chart-4: #112135;
+  --chart-5: #3c2949;
+  --chart-6: #1d4735;
+  --chart-7: #6d433f;
+  --chart-8: #345f86;
+
+  color-scheme: light;
+}
+
+/* Public site. Not used yet; defined so the palette lives in one place. */
+[data-theme='public'] {
+  --surface-page: #faf7f2;
+  --surface-panel: #f2ece4;
+  --surface-panel-raised: #ffffff;
+  --surface-inset: #f2ece4;
+  --surface-sidebar: #142b49;
+  --surface-sidebar-active: #29415f;
+
+  --ink-primary: #142b49;
+  --ink-secondary: #706a64;
+  --ink-accent: #8f5f12;
+  --ink-on-sidebar: #faf7f2;
+  --ink-on-sidebar-muted: #e8b9af;
+
+  --line-subtle: #ded5cc;
+  --line-strong: #89837e;
+  --line-focus: #8f5f12;
+
+  --action-primary: #142b49;
+  --action-primary-hover: #29415f;
+  --action-on-primary: #faf7f2;
+  --action-secondary: #f2ece4;
+  --action-secondary-hover: #ded5cc;
+  --action-on-secondary: #29415f;
+  --action-secondary-line: #89837e;
+  --action-soft: #f5e9ce;
+  --action-on-soft: #142b49;
+
+  --status-success-ink: #347556;
+  --status-success-bg: #e8f3ee;
+  --status-success-line: #a8cfbc;
+  --status-warning-ink: #8c621a;
+  --status-warning-bg: #fbf1dc;
+  --status-warning-line: #e0c48a;
+  --status-error-ink: #a74d4d;
+  --status-error-bg: #fbeaea;
+  --status-error-line: #e5b4b4;
+  --status-info-ink: #2e6da5;
+  --status-info-bg: #e7f0f8;
+  --status-info-line: #a9c8e0;
+
+  --chart-1: #8d5e12;
+  --chart-2: #567c6e;
+  --chart-3: #957f59;
+  --chart-4: #112135;
+  --chart-5: #3c2949;
+  --chart-6: #1d4735;
+  --chart-7: #6d433f;
+  --chart-8: #345f86;
+
+  color-scheme: light;
+}
+
+/*
+ * The brand palette. Identity colours that never change between themes.
+ * Gold and rose are decorative only - they fail AA as text. Use `ink.accent`.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --brand-navy: #142b49;
+  --brand-gold: #b77a17;
+  --brand-rose: #c77a73;
+  --brand-blush: #e8b9af;
+  --brand-ivory: #faf7f2;
 }
 
+/*
+ * TAILWIND MAPPING
+ *
+ * `inline` makes Tailwind emit `var(--surface-panel)` rather than resolving the
+ * value at build time, which is what allows one stylesheet to serve every theme.
+ */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-surface-page: var(--surface-page);
+  --color-surface-panel: var(--surface-panel);
+  --color-surface-panel-raised: var(--surface-panel-raised);
+  --color-surface-inset: var(--surface-inset);
+  --color-surface-sidebar: var(--surface-sidebar);
+  --color-surface-sidebar-active: var(--surface-sidebar-active);
+
+  --color-ink-primary: var(--ink-primary);
+  --color-ink-secondary: var(--ink-secondary);
+  --color-ink-accent: var(--ink-accent);
+  --color-ink-on-sidebar: var(--ink-on-sidebar);
+  --color-ink-on-sidebar-muted: var(--ink-on-sidebar-muted);
+
+  --color-line-subtle: var(--line-subtle);
+  --color-line-strong: var(--line-strong);
+  --color-line-focus: var(--line-focus);
+
+  --color-action-primary: var(--action-primary);
+  --color-action-primary-hover: var(--action-primary-hover);
+  --color-action-on-primary: var(--action-on-primary);
+  --color-action-secondary: var(--action-secondary);
+  --color-action-secondary-hover: var(--action-secondary-hover);
+  --color-action-on-secondary: var(--action-on-secondary);
+  --color-action-secondary-line: var(--action-secondary-line);
+  --color-action-soft: var(--action-soft);
+  --color-action-on-soft: var(--action-on-soft);
+
+  --color-success-ink: var(--status-success-ink);
+  --color-success-bg: var(--status-success-bg);
+  --color-success-line: var(--status-success-line);
+  --color-warning-ink: var(--status-warning-ink);
+  --color-warning-bg: var(--status-warning-bg);
+  --color-warning-line: var(--status-warning-line);
+  --color-error-ink: var(--status-error-ink);
+  --color-error-bg: var(--status-error-bg);
+  --color-error-line: var(--status-error-line);
+  --color-info-ink: var(--status-info-ink);
+  --color-info-bg: var(--status-info-bg);
+  --color-info-line: var(--status-info-line);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-chart-6: var(--chart-6);
+  --color-chart-7: var(--chart-7);
+  --color-chart-8: var(--chart-8);
+
+  --color-brand-navy: var(--brand-navy);
+  --color-brand-gold: var(--brand-gold);
+  --color-brand-rose: var(--brand-rose);
+  --color-brand-blush: var(--brand-blush);
+  --color-brand-ivory: var(--brand-ivory);
+
+  /*
+   * Typography, taken from the reference homepage design.
+   *   display - Cormorant Garamond, for headings. Warm, editorial, high contrast.
+   *   body    - Jost at weight 300, for everything readable.
+   *   label   - Marcellus, uppercase with wide tracking, for eyebrows and buttons.
+   */
+  --font-display: var(--font-cormorant), 'Cormorant Garamond', Georgia, serif;
+  --font-body: var(--font-jost), 'Jost', ui-sans-serif, system-ui, sans-serif;
+  --font-label: var(--font-marcellus), 'Marcellus', Georgia, serif;
+  --font-sans: var(--font-body);
+  --font-mono: ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/*
+ * BASE STYLES
+ */
+@layer base {
+  * {
+    /* The reference design is square throughout. Corners are a brand signature,
+     * so the default is 0 and any rounding must be deliberate. */
+    border-radius: 0;
+  }
+
+  html {
+    /* Next.js only overrides smooth scrolling during navigation when asked to,
+     * which keeps in-page anchors smooth without making route changes feel slow. */
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--surface-page);
+    color: var(--ink-primary);
+    font-family: var(--font-body);
+    font-weight: 300;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    line-height: 1.15;
+  }
+
+  /* One visible focus style everywhere, meeting the 3:1 non-text requirement.
+   * Inset by 2px so it is never clipped by a parent with overflow hidden. */
+  :focus-visible {
+    outline: 2px solid var(--line-focus);
+    outline-offset: -2px;
+  }
+
+  ::selection {
+    background-color: var(--action-soft);
+    color: var(--action-on-soft);
+  }
+
+  /* Respect the operating system setting. Animation here is decorative; nobody
+   * should have to endure it to use the tool. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/*
+ * COMPONENT UTILITIES
+ */
+
+/**
+ * The small uppercase label that runs through the brand: section eyebrows,
+ * table column headers, button text. Wide tracking is the whole point, so the
+ * size and spacing travel together as one utility.
+ */
+@utility eyebrow {
+  font-family: var(--font-label);
+  font-size: 0.72rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  line-height: 1.4;
+}
+
+/** The same idea at button scale: slightly larger, slightly tighter. */
+@utility label-caps {
+  font-family: var(--font-label);
+  font-size: 0.78rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+/** Tabular figures, so digits line up in tables and metrics. */
+@utility numeric {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
 }

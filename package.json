@@ -19,7 +19,7 @@
     "dev:status": "docker compose --env-file .env.local -f docker/compose.dev.yml ps",
     "dev:destroy": "docker compose --env-file .env.local -f docker/compose.dev.yml down -v",
     "dev:reset": "npm run dev:destroy && npm run dev:up && node scripts/wait-for-db.mjs",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "next typegen && tsc --noEmit",
     "lint": "eslint",
     "lint:fix": "eslint --fix",
     "format": "prettier --write .",
@@ -31,14 +31,18 @@
   },
   "dependencies": {
     "@date-fns/tz": "^1.5.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "date-fns": "^4.4.0",
     "drizzle-orm": "^0.45.2",
     "ioredis": "^6.0.0",
+    "lucide-react": "^1.31.0",
     "next": "16.3.1",
     "pino": "^10.3.1",
     "postgres": "^3.4.9",
     "react": "19.2.8",
     "react-dom": "19.2.8",
+    "tailwind-merge": "^3.6.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
