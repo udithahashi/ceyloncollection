@@ -1,5 +1,7 @@
 import type { NextConfig } from 'next';
 
+import { MAX_UPLOAD_TOTAL_BYTES } from './src/lib/images/limits';
+
 /**
  * Security headers applied to every response.
  *
@@ -46,8 +48,26 @@ const nextConfig: NextConfig = {
   // image, instead of requiring the full node_modules tree on the server.
   output: 'standalone',
 
-  // pino ships its own transport machinery and must not be bundled.
-  serverExternalPackages: ['pino', 'pino-pretty'],
+  // pino ships its own transport machinery and must not be bundled. sharp is a native
+  // module, and bundling it breaks the .node binary lookup.
+  serverExternalPackages: ['pino', 'pino-pretty', 'sharp'],
+
+  experimental: {
+    serverActions: {
+      /**
+       * Server Action bodies are capped at 1MB by default, which is the right default
+       * and the wrong one for the photo uploader: a single phone picture exceeds it.
+       *
+       * The number comes from @/lib/images/limits so that the framework's limit and the
+       * application's cannot drift. If they did, the failure would be a rejection
+       * before any of our code runs, with a message about bytes rather than about
+       * photos, and the uploader's own friendly warning would never be reached.
+       */
+      // In bytes, rather than the "40mb" string form, so it is the same number the
+      // uploader checks against rather than a rounded restatement of it.
+      bodySizeLimit: MAX_UPLOAD_TOTAL_BYTES,
+    },
+  },
 
   async headers() {
     return [{ source: '/:path*', headers: securityHeaders }];

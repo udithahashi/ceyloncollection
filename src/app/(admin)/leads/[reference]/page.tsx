@@ -9,6 +9,7 @@ import { CopyButton } from '@/components/ui/copy-button';
 import { PageHeader } from '@/components/ui/page-header';
 import { DeleteLeadButton } from '@/features/leads/components/delete-lead-button';
 import { StatusChanger } from '@/features/leads/components/status-changer';
+import { LeadImagePanel } from '@/features/leads/images/components/image-panel';
 import { getLeadByReference, leadFormOptions, listCustomerHistory } from '@/features/leads/queries';
 import { can } from '@/lib/auth/roles';
 import { authorize } from '@/lib/auth/session';
@@ -137,6 +138,8 @@ export default async function LeadPage({ params }: PageProps<'/leads/[reference]
               )}
             </CardContent>
           </Card>
+
+          <LeadImagePanel leadId={lead.id} reference={lead.reference} user={user} />
 
           <Card>
             <CardHeader>

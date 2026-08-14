@@ -12,7 +12,7 @@
  * so it still works even when the toolchain itself is broken.
  */
 import { execFile } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import net from 'node:net';
 import path from 'node:path';
 import process from 'node:process';
@@ -234,7 +234,47 @@ function checkEnvFile() {
     }
   }
 
+  checkUploadDirectory(values);
+
   return values;
+}
+
+/**
+ * Where lead photos will be written, and whether we can write there.
+ *
+ * Worth a check of its own because the failure is late and looks unrelated: everything
+ * works until someone attaches a photo, and then one upload fails with a permission
+ * error from deep inside the storage layer. On the VPS this directory is a mounted
+ * volume, which is exactly the kind of thing that comes up owned by root.
+ */
+function checkUploadDirectory(values) {
+  const driver = values.STORAGE_DRIVER ?? 'local';
+
+  if (driver !== 'local') {
+    warn('Upload directory', `STORAGE_DRIVER is "${driver}", so nothing is written locally`);
+    return;
+  }
+
+  const configured = values.STORAGE_LOCAL_DIR ?? './storage/uploads';
+  const directory = path.resolve(projectRoot, configured);
+
+  try {
+    mkdirSync(directory, { recursive: true });
+
+    // Created and removed rather than merely checked for existence: on Windows and in a
+    // container, a directory can exist and still not be writable by this process.
+    const probe = path.join(directory, `.doctor-${Date.now()}`);
+    writeFileSync(probe, 'ok');
+    rmSync(probe);
+
+    ok('Upload directory writable', directory);
+  } catch (error) {
+    fail(
+      'Upload directory writable',
+      `${directory}: ${error instanceof Error ? error.message : String(error)}`,
+      'Lead photos are written here. Create it and give your user write access,\nor point STORAGE_LOCAL_DIR somewhere you can write.'
+    );
+  }
 }
 
 async function checkDocker() {

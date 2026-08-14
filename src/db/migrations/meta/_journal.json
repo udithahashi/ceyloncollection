@@ -36,6 +36,13 @@
       "when": 1786793400000,
       "tag": "0004_customer_summary_open_ready",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1786793400001,
+      "tag": "0005_dry_ultron",
+      "breakpoints": true
     }
   ]
 }

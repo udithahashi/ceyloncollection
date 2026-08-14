@@ -46,8 +46,12 @@ These have already caused mistakes. Check them before writing code.
 ## Non-negotiable rules
 
 1. **No browser-facing REST API.** All reads happen in Server Components; all
-   writes happen in Server Actions. The only HTTP endpoints are the HMAC-signed
-   n8n integration routes, which are reachable on the internal Docker network only.
+   writes happen in Server Actions. Two exceptions exist, both deliberate: the
+   HMAC-signed n8n integration routes, reachable on the internal Docker network only,
+   and `/lead-images/[id]/[variant]`, because an `<img>` tag issues its own GET and no
+   component can hand it bytes. That route is read-only, checks the session and
+   `leads:read` inside the handler, and looks the storage key up by id rather than
+   taking a path from the URL. Do not add a third without the same kind of reason.
 2. **Never read `process.env` directly.** Import `{ env }` from `@/lib/env`, which
    is validated at startup. ESLint enforces this. `@/lib/env` is `server-only`, and
    so is everything that imports it - including `@/lib/time`. A `'use client'` file
@@ -63,7 +67,9 @@ These have already caused mistakes. Check them before writing code.
 5. **Store instants as `timestamptz` in UTC.** Convert to the business timezone
    only for display or for grouping by day, using `@/lib/time`. Qatar is UTC+3.
 6. **Soft-delete business records** (`deleted_at`), and write an `activity_log`
-   row for anything that changes data.
+   row for anything that changes data. `lead_images` is the one exception: deleting a
+   photo unlinks the file, because a soft delete that leaves the bytes on disk makes
+   the button a lie. The log entry is the record.
 7. **Phone numbers are the customer identity**, normalised to E.164.
 8. **Never log a secret, session token, or full phone number.** The logger
    redacts known field names, but do not rely on that alone.

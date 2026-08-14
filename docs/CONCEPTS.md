@@ -367,6 +367,59 @@ Sub-category slugs are unique **per category** rather than globally. That is not
 oversight: the business's own list has "Batik Saree" under both Batik Wear and
 Sarees & Osari, because one is a craft and the other a garment type.
 
+## Photos on a lead
+
+The photo is often the enquiry. "The green one in your third post" cannot be sourced
+from; a screenshot of that post can. So a lead can carry reference photos, and three
+decisions in that feature are worth knowing.
+
+**Every upload is decoded and re-encoded, never stored as it arrived.** That single
+step does four things: it drops the EXIF block, which on a phone photo contains GPS
+coordinates and the device - a customer sending a picture of a dress has not agreed to
+hand over their home address; it means the bytes we serve were generated from decoded
+pixels, so nothing executable in the original survives; it turns a 12-megapixel HEIC
+into a WebP of a few hundred kilobytes, which on Qatari mobile data is the difference
+between a gallery that loads and one nobody waits for; and it gives us a thumbnail, so
+a grid of photos costs 40KB each rather than 400KB.
+
+There is a subtlety in that: EXIF is also what says "this photo is rotated 90°", so
+the rotation has to be _applied_ before the metadata is discarded, or every second
+iPhone picture ends up sideways. `prepare.test.ts` asserts both halves - that the GPS
+tags are gone and that a portrait photo comes out portrait.
+
+Before any of that, the file's first bytes are checked against known signatures
+(`lib/images/sniff.ts`) and anything that is not a picture is refused. The interesting
+upload is not a large file; it is a file called `photo.jpg`, declared `image/jpeg`,
+that is really an HTML document. The browser's `file.type` and the extension are both
+claims made by whoever uploaded it.
+
+**There is one HTTP endpoint, and it is this.** The rule elsewhere is no
+browser-facing API: reads in Server Components, writes in Server Actions. An `<img>`
+tag can be neither - the element issues its own GET, and no component can hand it
+bytes. The alternative is inlining every photo as a `data:` URL, which defeats
+caching, prevents lazy loading, and puts megabytes of base64 into the HTML. So
+`/lead-images/[id]/[variant]` exists, read-only, and it applies the same checks in the
+same place as a page: a session, `leads:read`, and the image must belong to a lead that
+is not soft-deleted. **The object key comes from the database, never from the URL** -
+the URL carries an id which is looked up - which is what makes path traversal
+impossible here rather than merely unlikely. Refusals are 404, not 403, so the route
+cannot be used to discover which ids exist.
+
+**Deleting a photo deletes the file.** This is the one table that is not soft-deleted,
+and the reason is that the usual motive for removing a photo is that it should not be
+held at all: the wrong customer's picture, a face nobody agreed to store. A soft delete
+would leave the bytes on disk and make the button a lie; keeping the row while
+destroying the file leaves a record whose only content is a broken pointer. So both go,
+and the audit trail lives where audit trails belong - `activity_log` records who
+removed which photo from which lead. Whoever uploaded a photo may remove it even if
+their role cannot delete leads, because "wait for a manager" is the option with the
+real privacy cost.
+
+Files live under `STORAGE_LOCAL_DIR` behind a small interface (`lib/storage`), which is
+not `public/`: nothing in there is served by Next.js. The interface exists because the
+destination will change - a Docker volume on the VPS now, object storage when the photo
+count makes backing up a volume unpleasant.
+
 ## Importing the spreadsheet
 
 `/leads/import` reads a CSV and, before writing anything, tells you what importing it
