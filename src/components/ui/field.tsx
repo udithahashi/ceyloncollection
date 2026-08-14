@@ -18,9 +18,14 @@ import { cn } from '@/lib/cn';
  * explicitly if two forms with the same field names ever share a page.
  */
 
+/**
+ * 13px, medium weight, sentence case in the back office - the label style of
+ * every form you have filled in on a dashboard. `eyebrow` is what makes the same
+ * component come out as the brand's tracked-out capitals on the public site.
+ */
 export function Label({ className, ...props }: ComponentProps<'label'>) {
   return (
-    <label className={cn('eyebrow text-[0.66rem] text-ink-secondary', className)} {...props} />
+    <label className={cn('eyebrow text-[0.8125rem] text-ink-primary', className)} {...props} />
   );
 }
 
@@ -33,7 +38,7 @@ export function Label({ className, ...props }: ComponentProps<'label'>) {
  * it. An input whose edge you cannot see is an input you cannot find.
  */
 export const controlClasses = cn(
-  'w-full border border-line-strong bg-surface-panel px-3 text-sm text-ink-primary',
+  'rounded-control w-full border border-line-strong bg-surface-panel px-3 text-sm text-ink-primary',
   'transition-colors duration-150 ease-out',
   'placeholder:text-ink-secondary',
   'hover:border-ink-secondary',
@@ -85,7 +90,7 @@ export function Field({ id, label, hint, error, required, className, children }:
   const { hintId, errorId } = fieldWiring({ id, hint, error });
 
   return (
-    <div className={cn('flex flex-col gap-2', className)}>
+    <div className={cn('flex flex-col gap-1.5', className)}>
       <Label htmlFor={id}>
         {label}
         {required ? (
@@ -158,7 +163,7 @@ export function TextField({
         name={name}
         type={type}
         required={required}
-        className={cn(controlClasses, 'h-10', controlClassName)}
+        className={cn(controlClasses, 'h-9', controlClassName)}
         {...props}
       />
     </Field>
@@ -227,7 +232,7 @@ export function SelectField({
         {...control}
         name={name}
         required={required}
-        className={cn(controlClasses, 'h-10 pr-8', controlClassName)}
+        className={cn(controlClasses, 'h-9 pr-8', controlClassName)}
         {...props}
       >
         {children}

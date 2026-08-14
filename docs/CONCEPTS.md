@@ -282,6 +282,49 @@ Every change to data, and every security event worth knowing about, writes an
 `activity_log` row: who, what, when, from which address. Nothing updates or deletes
 those rows, and no role is granted a write on them.
 
+## Two design systems, one set of components
+
+The back office and the future public site look deliberately unalike, and the
+difference is not decoration.
+
+A shop window is glanced at. It should feel like a boutique: Cormorant Garamond
+headings, Jost body text, wide uppercase Marcellus labels, square corners, flat
+cream surfaces. That is the reference homepage in `reference/`, and it stays.
+
+The back office is stared at for an hour while comparing numbers in a table. It
+follows ordinary dashboard convention instead - Inter at four weights, 14px body
+text, 6px corners, sentence-case labels, tabular figures - because convention is
+what lets someone who has used one admin tool use this one without learning to
+see it first. Serif headings and tracked-out capitals cost real reading speed at
+these sizes, and a table is nothing but small text.
+
+What the two share is **colour**. Both themes draw from the same brand palette in
+`src/lib/theme/tokens.ts`, so the back office is unmistakably Ceylon Collection:
+navy surfaces, gold accents, the same status tones.
+
+The mechanism is that a theme carries more than colour. Alongside `surface`,
+`ink` and the rest, `ThemeTokens` has:
+
+| Group       | What it decides                                             |
+| ----------- | ----------------------------------------------------------- |
+| `typeface`  | display, body and label font stacks                         |
+| `corner`    | radius for controls and for panels - `0` on the public site |
+| `elevation` | panel and overlay shadows - `none` on the public site       |
+| `label`     | case, weight and tracking of small labels                   |
+
+So `Button`, `Card`, `Badge` and the field components never ask which world they
+are in. They use `rounded-control`, `shadow-panel` and the `eyebrow` utility, and
+the theme decides what those mean. One component, two houses.
+
+Two consequences worth remembering:
+
+- **Do not hardcode a typeface, a radius or a shadow in a component.** The one
+  exception is `BrandMark`, which names Marcellus directly, because a logotype is
+  identity rather than interface and should not change with the theme.
+- `tokens.test.ts` asserts the split - Inter in the admin themes, the brand
+  pairing on the public site, rounded versus square, sentence case versus
+  capitals. Unifying them by accident fails CI.
+
 ## Configuration
 
 `src/lib/env/schema.ts` declares every variable the app needs, with rules. On

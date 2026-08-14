@@ -74,8 +74,8 @@ function IssuedLink({ invitation }: { invitation: IssuedInvitation }) {
   const expires = new Date(invitation.expiresAt);
 
   return (
-    <div className="border border-success-line bg-success-bg p-4">
-      <p className="eyebrow text-[0.66rem] text-success-ink">Invitation ready</p>
+    <div className="rounded-panel border border-success-line bg-success-bg p-4">
+      <p className="eyebrow text-xs text-success-ink">Invitation ready</p>
 
       <p className="mt-2 text-sm text-ink-primary">
         Send this link to <strong className="font-medium">{invitation.email}</strong>. It works
@@ -84,7 +84,7 @@ function IssuedLink({ invitation }: { invitation: IssuedInvitation }) {
       </p>
 
       <div className="mt-3 flex items-start gap-2">
-        <code className="min-w-0 flex-1 overflow-x-auto border border-line-subtle bg-surface-inset px-3 py-2 text-xs text-ink-primary">
+        <code className="min-w-0 flex-1 overflow-x-auto rounded-control border border-line-subtle bg-surface-inset px-3 py-2 text-xs text-ink-primary">
           {invitation.url}
         </code>
         <CopyButton value={invitation.url} label="Copy invitation link" />

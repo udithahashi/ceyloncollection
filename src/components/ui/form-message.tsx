@@ -37,7 +37,11 @@ export function FormMessage({ tone = 'error', className, children, ...props }: F
       // `alert` makes a screen reader announce the message when it appears, which
       // is the whole point of showing an error after a submission.
       role={tone === 'error' ? 'alert' : 'status'}
-      className={cn('flex items-start gap-2.5 border px-3.5 py-3 text-sm', box, className)}
+      className={cn(
+        'flex items-start gap-2.5 rounded-control border px-3.5 py-3 text-sm',
+        box,
+        className
+      )}
       {...props}
     >
       <Icon className="mt-0.5 size-4 shrink-0" aria-hidden />

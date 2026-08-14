@@ -13,9 +13,10 @@ import { cn } from '@/lib/cn';
  */
 export const badgeVariants = cva(
   cn(
-    'inline-flex items-center gap-1.5 border px-2.5 py-1',
-    'font-[family-name:var(--font-label)] text-[0.68rem] tracking-[0.1em] uppercase',
-    'whitespace-nowrap'
+    'label-caps rounded-control inline-flex items-center gap-1.5 border px-2 py-0.5',
+    // 12px, which is the smallest size that stays comfortable to read once the
+    // text is sentence case rather than tracked-out capitals.
+    'text-xs leading-5 whitespace-nowrap'
   ),
   {
     variants: {

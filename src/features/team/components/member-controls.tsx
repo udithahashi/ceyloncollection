@@ -50,7 +50,7 @@ export function RoleControl({
         // posts when the button below is used, so the control degrades rather than
         // breaks.
         onChange={(event) => event.currentTarget.form?.requestSubmit()}
-        className="h-9 w-full border border-line-strong bg-surface-panel px-2 text-sm text-ink-primary disabled:cursor-not-allowed disabled:opacity-60"
+        className="h-9 w-full rounded-control border border-line-strong bg-surface-panel px-2 text-sm text-ink-primary disabled:cursor-not-allowed disabled:opacity-60"
       >
         {assignableRoles.map((role) => (
           <option key={role} value={role}>

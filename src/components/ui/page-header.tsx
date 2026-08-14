@@ -27,9 +27,11 @@ export function PageHeader({
     <div
       className={cn('flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between', className)}
     >
-      <div className="flex flex-col gap-2">
-        {eyebrow ? <p className="eyebrow text-ink-accent">{eyebrow}</p> : null}
-        <h1 className="text-3xl text-ink-primary sm:text-4xl">{title}</h1>
+      <div className="flex flex-col gap-1">
+        {eyebrow ? <p className="eyebrow text-xs text-ink-accent">{eyebrow}</p> : null}
+        {/* 24px. A page title in a tool needs to be findable, not grand; the
+         * display size that suits the public site's hero is shouting here. */}
+        <h1 className="text-2xl text-ink-primary">{title}</h1>
         {description ? <p className="max-w-2xl text-sm text-ink-secondary">{description}</p> : null}
       </div>
 

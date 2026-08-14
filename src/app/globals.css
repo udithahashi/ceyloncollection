@@ -64,6 +64,21 @@
   --chart-7: #6688c3;
   --chart-8: #a38cc7;
 
+  --typeface-display: var(--font-inter), 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --typeface-body: var(--font-inter), 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --typeface-label: var(--font-inter), 'Inter', ui-sans-serif, system-ui, sans-serif;
+
+  --corner-control: 0.375rem;
+  --corner-panel: 0.5rem;
+
+  --elevation-panel: 0 1px 2px 0 rgb(0 0 0 / 0.32);
+  --elevation-overlay: 0 16px 40px -12px rgb(0 0 0 / 0.64);
+
+  --label-transform: none;
+  --label-weight: 500;
+  --label-tracking: 0;
+  --label-tracking-tight: 0;
+
   /* Tells the browser to render native controls and scrollbars dark. */
   color-scheme: dark;
 }
@@ -119,6 +134,21 @@
   --chart-7: #6d433f;
   --chart-8: #345f86;
 
+  --typeface-display: var(--font-inter), 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --typeface-body: var(--font-inter), 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --typeface-label: var(--font-inter), 'Inter', ui-sans-serif, system-ui, sans-serif;
+
+  --corner-control: 0.375rem;
+  --corner-panel: 0.5rem;
+
+  --elevation-panel: 0 1px 2px 0 rgb(16 24 40 / 0.06);
+  --elevation-overlay: 0 16px 40px -12px rgb(16 24 40 / 0.18);
+
+  --label-transform: none;
+  --label-weight: 500;
+  --label-tracking: 0;
+  --label-tracking-tight: 0;
+
   color-scheme: light;
 }
 
@@ -172,6 +202,21 @@
   --chart-6: #1d4735;
   --chart-7: #6d433f;
   --chart-8: #345f86;
+
+  --typeface-display: var(--font-cormorant), 'Cormorant Garamond', Georgia, serif;
+  --typeface-body: var(--font-jost), 'Jost', ui-sans-serif, system-ui, sans-serif;
+  --typeface-label: var(--font-marcellus), 'Marcellus', Georgia, serif;
+
+  --corner-control: 0;
+  --corner-panel: 0;
+
+  --elevation-panel: none;
+  --elevation-overlay: 0 24px 60px -20px rgb(20 43 73 / 0.24);
+
+  --label-transform: uppercase;
+  --label-weight: 400;
+  --label-tracking: 0.28em;
+  --label-tracking-tight: 0.14em;
 
   color-scheme: light;
 }
@@ -251,25 +296,34 @@
   --color-brand-ivory: var(--brand-ivory);
 
   /*
-   * Typography, taken from the reference homepage design.
-   *   display - Cormorant Garamond, for headings. Warm, editorial, high contrast.
-   *   body    - Jost at weight 300, for everything readable.
-   *   label   - Marcellus, uppercase with wide tracking, for eyebrows and buttons.
+   * Typography. Which faces these resolve to depends on the theme: Inter
+   * throughout the back office, the brand pairing on the public site.
    */
-  --font-display: var(--font-cormorant), 'Cormorant Garamond', Georgia, serif;
-  --font-body: var(--font-jost), 'Jost', ui-sans-serif, system-ui, sans-serif;
-  --font-label: var(--font-marcellus), 'Marcellus', Georgia, serif;
-  --font-sans: var(--font-body);
+  --font-display: var(--typeface-display);
+  --font-body: var(--typeface-body);
+  --font-label: var(--typeface-label);
+  --font-sans: var(--typeface-body);
   --font-mono: ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace;
+
+  /* `rounded-control` and `rounded-panel`. Both are 0 on the public site. */
+  --radius-control: var(--corner-control);
+  --radius-panel: var(--corner-panel);
+
+  /* `shadow-panel` and `shadow-overlay`. */
+  --shadow-panel: var(--elevation-panel);
+  --shadow-overlay: var(--elevation-overlay);
 }
 
 /*
  * BASE STYLES
  */
 @layer base {
-  * {
-    /* The reference design is square throughout. Corners are a brand signature,
-     * so the default is 0 and any rounding must be deliberate. */
+  button,
+  input,
+  select,
+  textarea {
+    /* Native controls arrive with a platform-dependent radius. Zero it so
+     * `rounded-control` is the only thing that decides, in either theme. */
     border-radius: 0;
   }
 
@@ -279,12 +333,19 @@
     scroll-behavior: smooth;
   }
 
+  /*
+   * The back office defaults: 14px Inter at weight 400 on a 1.5 line, which is
+   * the size nearly every dashboard settles on. Explicit `text-*` utilities are
+   * in rem and so are unaffected by this; it governs prose and anything that
+   * forgot to say.
+   */
   body {
     background-color: var(--surface-page);
     color: var(--ink-primary);
     font-family: var(--font-body);
-    font-weight: 300;
-    line-height: 1.6;
+    font-size: 0.875rem;
+    font-weight: 400;
+    line-height: 1.5;
     -webkit-font-smoothing: antialiased;
   }
 
@@ -293,6 +354,24 @@
   h3,
   h4 {
     font-family: var(--font-display);
+    font-weight: 600;
+    /* Slightly negative, because Inter's default spacing is set for small
+     * sizes and looks loose once a heading passes about 20px. */
+    letter-spacing: -0.011em;
+    line-height: 1.25;
+  }
+
+  /*
+   * The public site's editorial voice: lighter body, larger measure, and serif
+   * headings that want positive tracking rather than negative.
+   */
+  [data-theme='public'] body {
+    font-size: 1rem;
+    font-weight: 300;
+    line-height: 1.6;
+  }
+
+  [data-theme='public'] :is(h1, h2, h3, h4) {
     font-weight: 500;
     letter-spacing: 0.01em;
     line-height: 1.15;
@@ -329,24 +408,28 @@
  */
 
 /**
- * The small uppercase label that runs through the brand: section eyebrows,
- * table column headers, button text. Wide tracking is the whole point, so the
- * size and spacing travel together as one utility.
+ * A small label: section eyebrows, table column headers, the text above a
+ * field. Every property here is theme-driven, which is what lets one component
+ * be a wide uppercase brand label on the public site and a quiet sentence-case
+ * dashboard label in the back office.
+ *
+ * Size is deliberately not set, so the call site chooses with `text-xs` or
+ * `text-sm`. Tracking, case and weight are what carry the house style.
  */
 @utility eyebrow {
   font-family: var(--font-label);
-  font-size: 0.72rem;
-  letter-spacing: 0.28em;
-  text-transform: uppercase;
+  font-weight: var(--label-weight);
+  letter-spacing: var(--label-tracking);
+  text-transform: var(--label-transform);
   line-height: 1.4;
 }
 
-/** The same idea at button scale: slightly larger, slightly tighter. */
+/** The same idea at button and badge scale, where the brand runs tighter. */
 @utility label-caps {
   font-family: var(--font-label);
-  font-size: 0.78rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  font-weight: var(--label-weight);
+  letter-spacing: var(--label-tracking-tight);
+  text-transform: var(--label-transform);
   line-height: 1;
 }
 

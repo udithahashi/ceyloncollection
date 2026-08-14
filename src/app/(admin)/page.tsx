@@ -28,10 +28,9 @@ function Metric({ label, value, note }: { label: string; value: string; note: st
   return (
     <Card>
       <CardContent className="flex flex-col gap-1">
-        <p className="eyebrow text-[0.6rem] text-ink-secondary">{label}</p>
-        <p className="font-[family-name:var(--font-display)] numeric text-4xl text-ink-primary">
-          {value}
-        </p>
+        <p className="eyebrow text-xs text-ink-secondary">{label}</p>
+        {/* Tabular figures, so a column of these lines up digit for digit. */}
+        <p className="numeric text-2xl font-semibold text-ink-primary">{value}</p>
         <p className="text-xs text-ink-secondary">{note}</p>
       </CardContent>
     </Card>
@@ -45,7 +44,7 @@ export default async function DashboardPage() {
   return (
     <>
       <PageHeader
-        eyebrow="Ceylon Collection"
+        eyebrow="Overview"
         title="Dashboard"
         description="Demand signals from social media, in one place. The database is connected but empty - lead capture arrives next, and every number here fills in once the first enquiry is recorded."
         actions={
@@ -56,8 +55,8 @@ export default async function DashboardPage() {
         }
       />
 
-      <section aria-labelledby="signals" className="flex flex-col gap-4">
-        <h2 id="signals" className="eyebrow text-ink-secondary">
+      <section aria-labelledby="signals" className="flex flex-col gap-3">
+        <h2 id="signals" className="eyebrow text-sm text-ink-secondary">
           This week
         </h2>
 
@@ -69,8 +68,8 @@ export default async function DashboardPage() {
         </div>
       </section>
 
-      <section aria-labelledby="foundations" className="flex flex-col gap-4">
-        <h2 id="foundations" className="eyebrow text-ink-secondary">
+      <section aria-labelledby="foundations" className="flex flex-col gap-3">
+        <h2 id="foundations" className="eyebrow text-sm text-ink-secondary">
           Design foundations
         </h2>
 
@@ -78,17 +77,15 @@ export default async function DashboardPage() {
           <Card>
             <CardHeader>
               <div className="flex flex-col gap-1">
-                <CardEyebrow>Typeface pairing</CardEyebrow>
-                <CardTitle>Three voices</CardTitle>
+                <CardEyebrow>Typography</CardEyebrow>
+                <CardTitle>Inter, at four weights</CardTitle>
               </div>
             </CardHeader>
             <CardContent className="flex flex-col gap-5">
               <div className="flex flex-col gap-1">
-                <p className="text-3xl text-ink-primary">
-                  Heritage weaves for the <em className="text-ink-accent">modern</em> woman
-                </p>
+                <p className="text-xl font-semibold text-ink-primary">Leads by sub-category</p>
                 <p className="text-xs text-ink-secondary">
-                  Cormorant Garamond · headings and headline figures
+                  Semibold 600 · headings and card titles
                 </p>
               </div>
 
@@ -97,15 +94,30 @@ export default async function DashboardPage() {
                   Hand-selected fabrics from Sri Lankan mills, sized and priced for families in
                   Qatar who know the difference after the second wash.
                 </p>
-                <p className="text-xs text-ink-secondary">Jost Light · body copy and tables</p>
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <p className="eyebrow text-ink-accent">Ready to buy · Doha · Batik frock</p>
                 <p className="text-xs text-ink-secondary">
-                  Marcellus · eyebrows, buttons, column headers
+                  Regular 400 · body copy and table cells
                 </p>
               </div>
+
+              <div className="flex flex-col gap-1">
+                <p className="eyebrow text-[0.8125rem] text-ink-primary">Contact number</p>
+                <p className="text-xs text-ink-secondary">
+                  Medium 500 · field labels, column headers, buttons
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <p className="numeric text-xl font-semibold text-ink-primary">1,248 · 07 · 0974</p>
+                <p className="text-xs text-ink-secondary">
+                  Tabular figures, so digits stay in column
+                </p>
+              </div>
+
+              <p className="border-t border-line-subtle pt-4 text-xs text-ink-secondary">
+                The brand pairing — Cormorant Garamond, Jost and Marcellus — is reserved for the
+                public site. A tool you work in all day is easier to read in a face designed for
+                interfaces.
+              </p>
             </CardContent>
           </Card>
 
@@ -127,7 +139,7 @@ export default async function DashboardPage() {
                   <li key={colour} className="flex items-center gap-3">
                     <span
                       aria-hidden="true"
-                      className="h-6 border border-line-subtle"
+                      className="h-6 rounded-control border border-line-subtle"
                       style={{ backgroundColor: colour, width: `${25 + index * 9}%` }}
                     />
                     <span className="numeric text-xs text-ink-secondary">{colour}</span>

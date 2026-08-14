@@ -69,6 +69,26 @@ Server Actions.
 
 `docs/CONCEPTS.md` explains what each of those words means and why it was chosen.
 
+## Design
+
+Two design systems share one set of components, because the two audiences are
+not the same.
+
+The back office looks like a dashboard, deliberately: Inter throughout, 14px
+body text, softly rounded corners, sentence-case labels, tabular figures. It is
+a tool used for long stretches, and following convention is what makes a tool
+feel obvious.
+
+The public site, when it arrives, keeps the brand's editorial character from the
+reference design in `reference/`: Cormorant Garamond headings, Jost body copy,
+Marcellus in wide uppercase, square corners, flat cream surfaces.
+
+Both draw from the same brand palette, so the back office still reads as Ceylon
+Collection - navy, gold, and the same status colours. Typeface, corner radius,
+elevation and label style are theme tokens rather than component decisions,
+which is what allows one `Button` to be correct in both. Every colour pairing is
+asserted against WCAG AA in `src/lib/theme/tokens.test.ts`.
+
 ## Security posture
 
 This holds real customers' names and phone numbers, so it is built as a closed

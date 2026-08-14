@@ -11,17 +11,17 @@ import { BrandMark } from './brand-mark';
  */
 export function AdminSidebar({ role }: { role: Role }) {
   return (
-    <aside className="hidden w-64 shrink-0 flex-col border-r border-line-subtle bg-surface-sidebar lg:flex">
-      <div className="flex h-16 items-center border-b border-line-subtle px-5">
+    <aside className="hidden w-60 shrink-0 flex-col border-r border-line-subtle bg-surface-sidebar lg:flex">
+      <div className="flex h-14 items-center border-b border-line-subtle px-4">
         <BrandMark className="text-ink-on-sidebar" />
       </div>
 
-      <div className="flex-1 overflow-y-auto py-6">
+      <div className="flex-1 overflow-y-auto px-2 py-4">
         <AdminNav role={role} />
       </div>
 
-      <div className="border-t border-line-subtle px-5 py-4">
-        <p className="eyebrow text-[0.55rem] text-ink-on-sidebar-muted">
+      <div className="border-t border-line-subtle px-4 py-3">
+        <p className="eyebrow text-[0.6875rem] text-ink-on-sidebar-muted">
           {isProductionDeployment ? 'Qatar operations' : `${env.APP_ENV} build`}
         </p>
       </div>

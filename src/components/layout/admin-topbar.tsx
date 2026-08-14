@@ -13,7 +13,7 @@ import { ThemeToggle } from './theme-toggle';
  */
 export function AdminTopbar({ theme, user }: { theme: AdminThemeName; user: SessionUser }) {
   return (
-    <header className="relative flex h-16 shrink-0 items-center justify-between gap-4 border-b border-line-subtle bg-surface-panel px-4 lg:px-8">
+    <header className="relative flex h-14 shrink-0 items-center justify-between gap-4 border-b border-line-subtle bg-surface-panel px-4 lg:px-6">
       {/*
         A native <details> disclosure rather than a JavaScript drawer. The browser
         gives us the open/close state, keyboard support and the correct
@@ -21,7 +21,7 @@ export function AdminTopbar({ theme, user }: { theme: AdminThemeName; user: Sess
       */}
       <details className="group lg:hidden">
         <summary
-          className="flex h-10 cursor-pointer list-none items-center gap-2 px-2 label-caps text-ink-secondary transition-colors hover:text-ink-primary [&::-webkit-details-marker]:hidden"
+          className="flex h-9 cursor-pointer list-none items-center gap-2 rounded-control px-2 text-sm font-medium text-ink-secondary transition-colors hover:text-ink-primary [&::-webkit-details-marker]:hidden"
           aria-label="Main menu"
         >
           <Menu aria-hidden="true" className="size-4" />
@@ -32,7 +32,7 @@ export function AdminTopbar({ theme, user }: { theme: AdminThemeName; user: Sess
           />
         </summary>
 
-        <div className="absolute inset-x-0 top-full z-40 max-h-[70vh] overflow-y-auto border-b border-line-subtle bg-surface-sidebar py-5 shadow-lg">
+        <div className="absolute inset-x-0 top-full z-40 max-h-[70vh] overflow-y-auto border-b border-line-subtle bg-surface-sidebar px-2 py-4 shadow-overlay">
           <AdminNav role={user.role} />
         </div>
       </details>

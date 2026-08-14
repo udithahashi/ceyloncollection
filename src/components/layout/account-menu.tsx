@@ -22,12 +22,12 @@ export function AccountMenu({ user }: { user: SessionUser }) {
   return (
     <details className="group relative">
       <summary
-        className="flex h-10 cursor-pointer list-none items-center gap-2 px-2 text-ink-secondary transition-colors hover:text-ink-primary [&::-webkit-details-marker]:hidden"
+        className="flex h-9 cursor-pointer list-none items-center gap-2 rounded-control px-2 text-ink-secondary transition-colors hover:bg-surface-panel-raised hover:text-ink-primary [&::-webkit-details-marker]:hidden"
         aria-label={`Account menu for ${user.name}`}
       >
         <span
           aria-hidden="true"
-          className="grid size-7 place-items-center border border-line-strong bg-surface-inset text-[0.68rem] font-medium text-ink-primary"
+          className="grid size-7 place-items-center rounded-control border border-line-strong bg-surface-inset text-[0.6875rem] font-semibold text-ink-primary"
         >
           {initials}
         </span>
@@ -38,20 +38,20 @@ export function AccountMenu({ user }: { user: SessionUser }) {
         />
       </summary>
 
-      <div className="absolute right-0 z-40 mt-1 w-60 border border-line-subtle bg-surface-panel-raised shadow-lg">
-        <div className="flex flex-col gap-1 border-b border-line-subtle px-4 py-3">
-          <p className="truncate text-sm text-ink-primary">{user.name}</p>
+      <div className="absolute right-0 z-40 mt-1 w-60 overflow-hidden rounded-panel border border-line-subtle bg-surface-panel-raised shadow-overlay">
+        <div className="flex flex-col gap-0.5 border-b border-line-subtle px-3 py-2.5">
+          <p className="truncate text-sm font-medium text-ink-primary">{user.name}</p>
           {/* Title attribute so a long address is readable without breaking layout. */}
           <p className="truncate text-xs text-ink-secondary" title={user.email}>
             {user.email}
           </p>
-          <p className="mt-1 eyebrow text-[0.55rem] text-ink-accent">{roleLabels[user.role]}</p>
+          <p className="mt-1 eyebrow text-[0.6875rem] text-ink-accent">{roleLabels[user.role]}</p>
         </div>
 
         <form action={signOutAction}>
           <button
             type="submit"
-            className="flex w-full items-center gap-2.5 px-4 py-3 text-left text-sm text-ink-secondary transition-colors hover:bg-surface-inset hover:text-ink-primary"
+            className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm text-ink-secondary transition-colors hover:bg-surface-inset hover:text-ink-primary"
           >
             <LogOut aria-hidden="true" className="size-4" />
             Sign out

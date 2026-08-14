@@ -42,17 +42,19 @@ export default async function TeamPage() {
   const assignable = assignableRoles(actor.role);
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-6">
       <PageHeader
         eyebrow="Administration"
         title="Team"
         description="Accounts are created by invitation only. Every account needs an authenticator app before it can be used."
       />
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_22rem]">
-        <Card>
+      <div className="grid gap-4 lg:grid-cols-[1fr_22rem]">
+        {/* `overflow-hidden` clips the table's inset header row to the card's
+            rounded corners; without it the top two come out square. */}
+        <Card className="overflow-hidden">
           <CardHeader>
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-1">
               <CardTitle>People</CardTitle>
               <CardDescription>
                 {members.length === 1 ? '1 account' : `${members.length} accounts`}
@@ -65,10 +67,10 @@ export default async function TeamPage() {
           </CardContent>
         </Card>
 
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-4">
           <Card>
             <CardHeader>
-              <div className="flex flex-col gap-1.5">
+              <div className="flex flex-col gap-1">
                 <CardTitle>Invite someone</CardTitle>
                 <CardDescription>
                   Creates a single-use link, valid for seven days. Send it however you normally
@@ -84,7 +86,7 @@ export default async function TeamPage() {
 
           <Card>
             <CardHeader>
-              <div className="flex flex-col gap-1.5">
+              <div className="flex flex-col gap-1">
                 <CardTitle>Pending invitations</CardTitle>
                 <CardDescription>
                   {invitations.length === 0
@@ -129,7 +131,7 @@ function MemberTable({
           Everyone with an account, their role, and whether their account is active
         </caption>
 
-        <thead>
+        <thead className="bg-surface-inset">
           <tr className="border-b border-line-subtle text-left">
             <Th>Name</Th>
             <Th>Role</Th>
@@ -236,15 +238,12 @@ function InvitationRow({ invitation }: { invitation: PendingInvitation }) {
 
 function Th({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <th
-      scope="col"
-      className={`px-4 py-3 eyebrow text-[0.6rem] text-ink-secondary ${className ?? ''}`}
-    >
+    <th scope="col" className={`px-4 py-2.5 eyebrow text-xs text-ink-secondary ${className ?? ''}`}>
       {children}
     </th>
   );
 }
 
 function Td({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <td className={`px-4 py-4 align-top ${className ?? ''}`}>{children}</td>;
+  return <td className={`px-4 py-3 align-top ${className ?? ''}`}>{children}</td>;
 }

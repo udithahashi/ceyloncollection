@@ -23,20 +23,22 @@ export function AdminNav({ role, className }: { role: Role; className?: string }
   const sections = navSectionsFor(role);
 
   return (
-    <nav aria-label="Main" className={cn('flex flex-col gap-7', className)}>
+    <nav aria-label="Main" className={cn('flex flex-col gap-6', className)}>
       {sections.map((section) => (
-        <div key={section.heading} className="flex flex-col gap-1">
-          <h2 className="px-4 pb-2 eyebrow text-[0.6rem] text-ink-on-sidebar-muted">
+        <div key={section.heading} className="flex flex-col gap-0.5">
+          <h2 className="px-3 pb-1.5 eyebrow text-xs text-ink-on-sidebar-muted">
             {section.heading}
           </h2>
 
-          <ul className="flex flex-col">
+          <ul className="flex flex-col gap-0.5">
             {section.items.map((item) => {
               const Icon = item.icon;
               const isActive = item.href !== undefined && pathname === item.href;
 
+              // The inset rounded row of an ordinary dashboard rail, rather than
+              // an edge-to-edge band with a brand rule down the side.
               const shared = cn(
-                'flex items-center gap-3 border-l-2 px-4 py-2.5 text-sm',
+                'rounded-control flex items-center gap-2.5 px-3 py-2 text-sm',
                 'transition-colors duration-150 ease-out'
               );
 
@@ -46,14 +48,11 @@ export function AdminNav({ role, className }: { role: Role; className?: string }
                     // Not a link and not a button: there is nothing to activate
                     // yet, so it must not be focusable or announced as clickable.
                     <span
-                      className={cn(
-                        shared,
-                        'cursor-default border-transparent text-ink-on-sidebar-muted opacity-60'
-                      )}
+                      className={cn(shared, 'cursor-default text-ink-on-sidebar-muted opacity-60')}
                     >
                       <Icon aria-hidden="true" className="size-4 shrink-0" />
                       <span className="flex-1">{item.label}</span>
-                      <span className="eyebrow text-[0.55rem] text-ink-on-sidebar-muted">Soon</span>
+                      <span className="text-[0.6875rem] text-ink-on-sidebar-muted">Soon</span>
                     </span>
                   ) : (
                     <Link
@@ -62,13 +61,17 @@ export function AdminNav({ role, className }: { role: Role; className?: string }
                       className={cn(
                         shared,
                         isActive
-                          ? // The gold bar is brand, not information: the changed
-                            // background and aria-current both say "active" too.
-                            'border-brand-gold bg-surface-sidebar-active text-ink-on-sidebar'
-                          : 'border-transparent text-ink-on-sidebar-muted hover:bg-surface-sidebar-active hover:text-ink-on-sidebar'
+                          ? 'bg-surface-sidebar-active font-medium text-ink-on-sidebar'
+                          : 'text-ink-on-sidebar-muted hover:bg-surface-sidebar-active hover:text-ink-on-sidebar'
                       )}
                     >
-                      <Icon aria-hidden="true" className="size-4 shrink-0" />
+                      {/* Gold on the active icon is the one piece of brand left in
+                       * the rail. It is decoration: the fill, the weight and
+                       * aria-current each say "active" on their own. */}
+                      <Icon
+                        aria-hidden="true"
+                        className={cn('size-4 shrink-0', isActive && 'text-brand-gold')}
+                      />
                       <span className="flex-1">{item.label}</span>
                     </Link>
                   )}

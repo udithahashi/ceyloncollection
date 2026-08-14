@@ -1,5 +1,5 @@
 /**
- * Design tokens: the single source of truth for every colour in the product.
+ * Design tokens: the single source of truth for how the product looks.
  *
  * WHY THIS IS TYPESCRIPT AND NOT ONLY CSS
  * The browser needs these as CSS custom properties, Chart.js needs the same
@@ -16,6 +16,16 @@
  * Names are chosen to read well as Tailwind utilities: `bg-surface-panel`,
  * `text-ink-secondary`, `border-line-subtle`. Hence `ink` rather than `text`,
  * which would produce `text-text-secondary`.
+ *
+ * TWO DESIGN SYSTEMS IN ONE FILE
+ * A theme carries more than colour. The back office follows ordinary dashboard
+ * convention - Inter, gentle 6px corners, sentence-case labels - because it is
+ * a tool people work in for hours, and convention is what makes a tool feel
+ * obvious. The public site keeps the brand's editorial character: serif
+ * headings, square corners, wide uppercase labels. Those differences live in
+ * the `typeface`, `corner`, `elevation` and `label` groups below, so a shared
+ * component such as `Button` renders correctly in either world without ever
+ * asking which one it is in.
  *
  * ACCESSIBILITY
  * Every foreground/background pairing the app uses is asserted against WCAG 2.1
@@ -131,6 +141,72 @@ export type ThemeTokens = {
   /** Chart series colours in order. Each reaches 3:1 against `surface.panel`,
    *  which WCAG requires of graphics that carry meaning. */
   chart: readonly string[];
+  /** Font stacks. The back office uses one face for all three roles. */
+  typeface: {
+    /** Headings and large figures. */
+    display: string;
+    /** Body copy, table cells, form controls. */
+    body: string;
+    /** Small labels: eyebrows, column headers, button text. */
+    label: string;
+  };
+  /** Border radius. Named `corner` so it does not collide with Tailwind's own
+   *  `--radius-*` namespace, which this feeds. */
+  corner: {
+    /** Buttons, inputs, badges - anything the size of a control. */
+    control: string;
+    /** Cards, tables, dialogs. Slightly softer than a control. */
+    panel: string;
+  };
+  /** Drop shadows. The dark theme leans on the surface ladder instead, so its
+   *  values are faint; `none` is legitimate. */
+  elevation: {
+    /** A resting card. */
+    panel: string;
+    /** Something floating above the page: menu, popover, dialog. */
+    overlay: string;
+  };
+  /**
+   * How a small label is set. This is the single largest difference between the
+   * two design systems: the brand's signature is wide uppercase tracking, and a
+   * dashboard's is a quiet sentence-case label you can read at a glance.
+   */
+  label: {
+    /** `uppercase` for the brand, `none` for the back office. */
+    transform: string;
+    /** Numeric CSS weight, as a string. */
+    weight: string;
+    /** Tracking for eyebrows and column headers. */
+    tracking: string;
+    /** Tracking at button and badge scale, where the brand runs tighter. */
+    trackingTight: string;
+  };
+};
+
+/**
+ * Inter for every role in the back office.
+ *
+ * One face, four weights. Mixing a serif into a data table is a way of making
+ * columns of numbers harder to compare, which is the opposite of the job.
+ */
+const UI_TYPEFACE: ThemeTokens['typeface'] = {
+  display: "var(--font-inter), 'Inter', ui-sans-serif, system-ui, sans-serif",
+  body: "var(--font-inter), 'Inter', ui-sans-serif, system-ui, sans-serif",
+  label: "var(--font-inter), 'Inter', ui-sans-serif, system-ui, sans-serif",
+};
+
+/** Ordinary dashboard geometry: 6px on controls, 8px on panels. */
+const UI_CORNER: ThemeTokens['corner'] = {
+  control: '0.375rem',
+  panel: '0.5rem',
+};
+
+/** Sentence case, medium weight, no tracking. The dashboard default. */
+const UI_LABEL: ThemeTokens['label'] = {
+  transform: 'none',
+  weight: '500',
+  tracking: '0',
+  trackingTight: '0',
 };
 
 /**
@@ -214,6 +290,15 @@ const adminDark: ThemeTokens = {
     '#6688C3', // blue
     '#A38CC7', // lavender
   ],
+  typeface: UI_TYPEFACE,
+  corner: UI_CORNER,
+  // Barely there. On a dark surface a shadow reads as dirt, so the border and
+  // the surface ladder do the work and this only softens the panel edge.
+  elevation: {
+    panel: '0 1px 2px 0 rgb(0 0 0 / 0.32)',
+    overlay: '0 16px 40px -12px rgb(0 0 0 / 0.64)',
+  },
+  label: UI_LABEL,
 };
 
 /** Back office, light: navy sidebar, light workspace, white cards. */
@@ -267,6 +352,13 @@ const adminLight: ThemeTokens = {
     '#6D433F', // deep rose
     '#345F86', // blue
   ],
+  typeface: UI_TYPEFACE,
+  corner: UI_CORNER,
+  elevation: {
+    panel: '0 1px 2px 0 rgb(16 24 40 / 0.06)',
+    overlay: '0 16px 40px -12px rgb(16 24 40 / 0.18)',
+  },
+  label: UI_LABEL,
 };
 
 /**
@@ -309,6 +401,29 @@ const publicSite: ThemeTokens = {
   },
   status: LIGHT_STATUS,
   chart: adminLight.chart,
+  /** The pairing from the reference homepage. */
+  typeface: {
+    display: "var(--font-cormorant), 'Cormorant Garamond', Georgia, serif",
+    body: "var(--font-jost), 'Jost', ui-sans-serif, system-ui, sans-serif",
+    label: "var(--font-marcellus), 'Marcellus', Georgia, serif",
+  },
+  /** Square throughout. Corners are part of the brand's signature. */
+  corner: {
+    control: '0',
+    panel: '0',
+  },
+  /** Flat. Depth comes from the cream surface ladder and hairline rules. */
+  elevation: {
+    panel: 'none',
+    overlay: '0 24px 60px -20px rgb(20 43 73 / 0.24)',
+  },
+  /** Wide uppercase tracking - the detail that reads as boutique. */
+  label: {
+    transform: 'uppercase',
+    weight: '400',
+    tracking: '0.28em',
+    trackingTight: '0.14em',
+  },
 };
 
 export const themes: Record<ThemeName, ThemeTokens> = {

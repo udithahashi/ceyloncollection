@@ -61,6 +61,28 @@ These have already caused mistakes. Check them before writing code.
 7. **Phone numbers are the customer identity**, normalised to E.164.
 8. **Never log a secret, session token, or full phone number.** The logger
    redacts known field names, but do not rely on that alone.
+9. **The back office is a standard dashboard; the public site is the brand.**
+   Details below.
+
+## Two design systems
+
+The back office follows ordinary dashboard convention: **Inter** throughout,
+14px body text, 6px corners, sentence-case labels, tabular figures. The public
+site keeps the brand's editorial pairing - Cormorant Garamond, Jost, Marcellus -
+with square corners and wide uppercase labels. **Both use the same brand
+colours.**
+
+One set of components serves both, so:
+
+- Never hardcode a font family, border radius or shadow in a component. Use
+  `font-body` / `font-display` / `font-label`, `rounded-control` /
+  `rounded-panel`, `shadow-panel` / `shadow-overlay`, and the `eyebrow` /
+  `label-caps` utilities. Each resolves through the active theme.
+- Add anything new to `ThemeTokens` in `src/lib/theme/tokens.ts` first, then
+  mirror it into `src/app/globals.css`. The tests fail if the two disagree, or
+  if a token is unreachable from any component.
+- `BrandMark` is the one deliberate exception: a logotype names Marcellus
+  directly, because identity should not change with the theme.
 
 ## Layout
 

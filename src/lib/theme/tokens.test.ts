@@ -278,6 +278,52 @@ describe('theme selection', () => {
   });
 });
 
+/*
+ * The back office and the public site are two design systems sharing one set of
+ * components. It would be an easy tidy-up to "unify" them and lose the point of
+ * the split, so the difference is asserted rather than only documented.
+ */
+describe('the two design systems stay apart', () => {
+  it.each(ADMIN_THEMES)('sets %s entirely in the interface face', (themeName) => {
+    const { typeface } = themes[themeName];
+
+    for (const role of ['display', 'body', 'label'] as const) {
+      expect(typeface[role], `${role} should be Inter in the back office`).toContain('Inter');
+    }
+  });
+
+  it('keeps the brand pairing on the public site', () => {
+    const { typeface } = themes.public;
+
+    expect(typeface.display).toContain('Cormorant Garamond');
+    expect(typeface.body).toContain('Jost');
+    expect(typeface.label).toContain('Marcellus');
+  });
+
+  it('rounds the corners of the back office and squares the public site', () => {
+    for (const themeName of ADMIN_THEMES) {
+      // Anything above zero. The exact radius is a matter of taste; having one
+      // at all is what distinguishes the dashboard from the brand.
+      expect(parseFloat(themes[themeName].corner.control)).toBeGreaterThan(0);
+      expect(parseFloat(themes[themeName].corner.panel)).toBeGreaterThan(0);
+    }
+
+    expect(parseFloat(themes.public.corner.control)).toBe(0);
+    expect(parseFloat(themes.public.corner.panel)).toBe(0);
+  });
+
+  it('sets small labels in sentence case in the back office and capitals on the public site', () => {
+    for (const themeName of ADMIN_THEMES) {
+      expect(themes[themeName].label.transform).toBe('none');
+      // Tracked-out lowercase is the tell of a brand label used as a UI label.
+      expect(parseFloat(themes[themeName].label.tracking)).toBe(0);
+    }
+
+    expect(themes.public.label.transform).toBe('uppercase');
+    expect(parseFloat(themes.public.label.tracking)).toBeGreaterThan(0);
+  });
+});
+
 describe('toCssVariableName', () => {
   it('converts camelCase segments to kebab-case', () => {
     expect(toCssVariableName(['surface', 'panelRaised'])).toBe('--surface-panel-raised');
@@ -356,16 +402,20 @@ describe('globals.css matches the tokens', () => {
     }
   });
 
-  it('exposes every theme token to Tailwind', () => {
-    const mapped = customPropertiesIn('@theme inline');
+  it('makes every theme token reachable from a component', () => {
+    const mapped = Object.values(customPropertiesIn('@theme inline'));
 
-    // Tailwind only generates a utility for a variable it knows about, so a token
-    // missing here is a token no component can reach.
     for (const [name] of toCssVariables(themes[DEFAULT_ADMIN_THEME])) {
-      const referenced = Object.values(mapped).some((value) => value === `var(${name})`);
-      expect(referenced, `${name} is never mapped into @theme, so it has no utility class`).toBe(
-        true
-      );
+      // A token earns its keep one of two ways: Tailwind knows the variable and
+      // generates a utility class for it, or one of our own `@utility` rules
+      // consumes it. A token that is neither is a token no component can reach.
+      const viaTailwind = mapped.some((value) => value === `var(${name})`);
+      const viaUtility = new RegExp(`@utility[^}]*var\\(${name}\\)`).test(stylesheet);
+
+      expect(
+        viaTailwind || viaUtility,
+        `${name} is neither mapped into @theme nor used by an @utility rule, so no component can reach it`
+      ).toBe(true);
     }
   });
 });
