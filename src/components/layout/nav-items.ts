@@ -9,6 +9,8 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 
+import { canPermission, type Permission, type Role } from '@/lib/auth/roles';
+
 /**
  * The back office navigation, as data.
  *
@@ -25,9 +27,17 @@ export type NavItem = {
    * the real route tree, so this widens by itself as pages are added - and a
    * typo becomes a type error rather than a broken link.
    */
-  href?: '/';
+  href?: '/' | '/team';
   /** Shown as a hint under the label. */
   description?: string;
+  /**
+   * Hides the item from roles that lack this permission.
+   *
+   * Hiding is courtesy, not security: the page and its actions check for
+   * themselves. Showing a viewer a Team link that refuses them on arrival is just
+   * a worse interface.
+   */
+  permission?: Permission;
 };
 
 export type NavSection = {
@@ -49,17 +59,34 @@ export const navSections: readonly NavSection[] = [
   {
     heading: 'Demand',
     items: [
-      { label: 'Leads', icon: Inbox },
-      { label: 'Customers', icon: Users },
-      { label: 'Analytics', icon: BarChart3 },
+      { label: 'Leads', icon: Inbox, permission: 'leads:read' },
+      { label: 'Customers', icon: Users, permission: 'customers:read' },
+      { label: 'Analytics', icon: BarChart3, permission: 'analytics:read' },
     ],
   },
   {
     heading: 'Configuration',
     items: [
-      { label: 'Taxonomy', icon: Tags },
-      { label: 'Team', icon: ShieldCheck },
-      { label: 'Settings', icon: Settings },
+      { label: 'Taxonomy', icon: Tags, permission: 'taxonomy:read' },
+      { label: 'Team', icon: ShieldCheck, href: '/team', permission: 'users:manage' },
+      { label: 'Settings', icon: Settings, permission: 'settings:read' },
     ],
   },
 ];
+
+/**
+ * The sections a role should see, with empty sections dropped.
+ *
+ * A heading with nothing under it looks like a rendering bug, which is why the
+ * filter removes the section rather than just its items.
+ */
+export function navSectionsFor(role: Role): NavSection[] {
+  return navSections
+    .map((section) => ({
+      ...section,
+      items: section.items.filter(
+        (item) => item.permission === undefined || canPermission(role, item.permission)
+      ),
+    }))
+    .filter((section) => section.items.length > 0);
+}

@@ -1,7 +1,9 @@
 import { ChevronDown, Menu } from 'lucide-react';
 
+import type { SessionUser } from '@/lib/auth/session';
 import type { AdminThemeName } from '@/lib/theme/tokens';
 
+import { AccountMenu } from './account-menu';
 import { AdminNav } from './admin-nav';
 import { BrandMark } from './brand-mark';
 import { ThemeToggle } from './theme-toggle';
@@ -9,7 +11,7 @@ import { ThemeToggle } from './theme-toggle';
 /**
  * The top bar: mobile navigation on the left, theme and account on the right.
  */
-export function AdminTopbar({ theme }: { theme: AdminThemeName }) {
+export function AdminTopbar({ theme, user }: { theme: AdminThemeName; user: SessionUser }) {
   return (
     <header className="relative flex h-16 shrink-0 items-center justify-between gap-4 border-b border-line-subtle bg-surface-panel px-4 lg:px-8">
       {/*
@@ -31,7 +33,7 @@ export function AdminTopbar({ theme }: { theme: AdminThemeName }) {
         </summary>
 
         <div className="absolute inset-x-0 top-full z-40 max-h-[70vh] overflow-y-auto border-b border-line-subtle bg-surface-sidebar py-5 shadow-lg">
-          <AdminNav />
+          <AdminNav role={user.role} />
         </div>
       </details>
 
@@ -42,6 +44,7 @@ export function AdminTopbar({ theme }: { theme: AdminThemeName }) {
 
       <div className="flex items-center gap-2">
         <ThemeToggle current={theme} />
+        <AccountMenu user={user} />
       </div>
     </header>
   );

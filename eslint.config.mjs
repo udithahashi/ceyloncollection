@@ -82,6 +82,15 @@ const eslintConfig = defineConfig([
   },
 
   {
+    // proxy.ts runs in front of the app rather than inside it, and the Next.js
+    // documentation is explicit that it must not depend on shared modules. Reading
+    // the inlined NODE_ENV constant is the documented way to vary the CSP between
+    // development and production without importing the env module.
+    files: ['src/proxy.ts'],
+    rules: { 'no-restricted-syntax': 'off' },
+  },
+
+  {
     files: ['scripts/**/*.mjs', '*.config.mjs', '*.config.ts'],
     rules: { 'no-console': 'off', 'no-restricted-syntax': 'off' },
   },

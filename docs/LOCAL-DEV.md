@@ -17,6 +17,21 @@ npm run dev
 `npm run setup` will not overwrite an existing `.env.local`. Pass `--force` if you
 really mean to replace it; it keeps a `.env.local.backup`.
 
+Then create yourself an account. There is no sign-up page, so the first one is made
+from the terminal:
+
+```bash
+npm run db:migrate        # create the tables
+npm run auth:create-owner # asks for a name, email and password
+```
+
+Sign in at http://localhost:3000, and you will be asked to set up an authenticator
+app straight away - two-factor is required for every account, including yours. Any
+TOTP app works: Google Authenticator, 1Password, Bitwarden. Keep the backup codes it
+shows you; they are the only way back in if you lose the phone.
+
+Everyone else is added from the Team page, which produces a one-time link to send them.
+
 ## Every day
 
 ```bash
@@ -87,6 +102,23 @@ npm run test:watch    # re-runs affected tests as you type
 npm run lint:fix      # fixes what can be fixed automatically
 npm run format        # reformats everything
 ```
+
+### Probes
+
+Two checks need a running database, so they are scripts rather than tests -
+`npm run verify` has to pass on a machine with nothing started.
+
+```bash
+npm run auth:probe   # sign-in, two-factor, backup codes, invitations
+```
+
+`auth:probe` creates a throwaway account, walks the entire authentication flow
+against the real database, and deletes everything it made. It is worth running after
+any change to authentication, roles, or the invitation flow. Start `npm run dev` first
+and it will also check the invitation page renders.
+
+The output is a list of `ok` lines and a final count. Anything marked `FAIL` is a real
+finding, not a flaky test.
 
 ## Git hooks
 

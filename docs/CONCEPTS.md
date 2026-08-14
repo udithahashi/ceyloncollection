@@ -238,6 +238,50 @@ work, which the env validation refuses to allow in production - in-memory counte
 reset on restart and are not shared between processes, so rate limiting would look
 like it worked while not working.
 
+## Authentication and authorisation
+
+Two separate questions, answered in two separate places: who you are, and what you
+may do.
+
+**Who you are** is Better Auth's job, with three things configured on top of it.
+
+Accounts are invite-only. Better Auth's sign-up endpoint is switched off, and the only
+routes to an account are the Team page and `npm run auth:create-owner` for the very
+first one. An invitation is a random 32-byte token, stored only as a SHA-256 hash, good
+for one use and seven days. The role is fixed by whoever sent the invitation, never by
+the person accepting it.
+
+Two-factor is mandatory. A correct password on an enrolled account produces no
+session at all - the two-factor plugin creates one, deletes it, and hands back a
+short-lived challenge instead. A new account is sent to enrolment before it can reach
+any page. `npm run auth:probe` asserts exactly this, because it is the property the
+rest of the design leans on.
+
+Better Auth's HTTP handler is deliberately **not** mounted at `/api/auth/*`. That would
+publish thirty-odd endpoints when this application needs five. Instead the Server
+Actions in `src/features/auth/` call `auth.api.*` directly, in the same process.
+
+**What you may do** is one file: `src/lib/auth/roles.ts`. Four roles, eight resources,
+five actions, and a plain table of grants. A permission absent from the table is
+denied, so a new resource is inaccessible until someone deliberately grants it. It is
+a table rather than scattered `if (user.role === 'owner')` checks because a policy you
+cannot read in one sitting is a policy nobody audits.
+
+Every page starts with `requireUser()` or `requirePermission()`; every Server Action
+starts with `authorize()`. Both are needed, and neither substitutes for the other:
+
+> A Server Action is a public HTTP endpoint no matter how much it looks like a
+> function call. Being unreachable from the navigation is not access control.
+
+`src/proxy.ts` also redirects visitors with no session cookie, but that is a shortcut
+to avoid rendering a layout that is about to redirect anyway. It reads no database and
+decides no permissions. Treating it as the security boundary is how applications end
+up with one unguarded endpoint nobody noticed.
+
+Every change to data, and every security event worth knowing about, writes an
+`activity_log` row: who, what, when, from which address. Nothing updates or deletes
+those rows, and no role is granted a write on them.
+
 ## Configuration
 
 `src/lib/env/schema.ts` declares every variable the app needs, with rules. On

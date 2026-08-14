@@ -4,8 +4,8 @@ import type { NextConfig } from 'next';
  * Security headers applied to every response.
  *
  * The Content-Security-Policy is deliberately NOT here: it needs a fresh nonce
- * per request, so it is set in middleware once authentication lands in Phase 2.
- * Everything below is static and safe to send from the edge of the app.
+ * per request, so it is set in src/proxy.ts. Everything below is static and safe
+ * to send from the edge of the app.
  */
 const securityHeaders = [
   // Force HTTPS for two years, including subdomains. Ignored by browsers over

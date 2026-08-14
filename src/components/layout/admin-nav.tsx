@@ -3,9 +3,10 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
+import type { Role } from '@/lib/auth/roles';
 import { cn } from '@/lib/cn';
 
-import { navSections } from './nav-items';
+import { navSectionsFor } from './nav-items';
 
 /**
  * The navigation list.
@@ -13,13 +14,17 @@ import { navSections } from './nav-items';
  * A client component only because it needs the current path to mark the active
  * item. That highlight is set with `aria-current="page"` as well as colour, so it
  * is available to a screen reader and does not depend on seeing the gold bar.
+ *
+ * The role only decides what is listed. It is not a permission check - those live
+ * on the pages and actions themselves.
  */
-export function AdminNav({ className }: { className?: string }) {
+export function AdminNav({ role, className }: { role: Role; className?: string }) {
   const pathname = usePathname();
+  const sections = navSectionsFor(role);
 
   return (
     <nav aria-label="Main" className={cn('flex flex-col gap-7', className)}>
-      {navSections.map((section) => (
+      {sections.map((section) => (
         <div key={section.heading} className="flex flex-col gap-1">
           <h2 className="px-4 pb-2 eyebrow text-[0.6rem] text-ink-on-sidebar-muted">
             {section.heading}
