@@ -367,6 +367,52 @@ Sub-category slugs are unique **per category** rather than globally. That is not
 oversight: the business's own list has "Batik Saree" under both Batik Wear and
 Sarees & Osari, because one is a craft and the other a garment type.
 
+## Importing the spreadsheet
+
+`/leads/import` reads a CSV and, before writing anything, tells you what importing it
+would do: a verdict for every line, every problem named with its line and column, and
+every value it could not place. Only then is there a button that writes.
+
+That shape - **plan, then commit** - is the whole design, and it is there because a
+spreadsheet kept by hand is never clean. Dates are typed three ways, the same customer
+appears as `33124455` and `+974 3312 4455`, a fabric is spelled wrong, a row is a
+duplicate of the row above. The alternative designs are both bad: refusing the whole
+file over one bad cell wastes the other four hundred rows, and importing what it can
+while quietly dropping the rest leaves you unable to tell what is missing. So every row
+is judged independently, and every rejection says what to fix.
+
+Four decisions inside it are worth knowing.
+
+**Nothing is invented.** A fabric that is not in the taxonomy is a rejected row with a
+link to `/taxonomy/fabrics`, not a new fabric. If the importer created values, one typo
+would become a permanent list entry and the analytics would split one fabric across two
+names. Unplaced values are reported once with a row count, so the fix is one visit to
+the taxonomy page and one re-upload.
+
+**Re-importing the same file is safe.** Each lead gets a fingerprint - phone, day,
+sub-category, fabric, size, quantity, and the normalised request text - and a row whose
+fingerprint already exists in the database is reported as `present` rather than written
+again. A row that repeats an earlier line in the same file is `duplicate`. This matters
+because the natural way to use a dry run is to fix three cells and upload the whole
+sheet again.
+
+**The report is not trusted.** The commit step re-reads the file and plans it from
+scratch; it does not import the rows a report claimed were valid. What comes back from
+the browser is a string that arrived over HTTP, and in the minutes a report sat on
+screen the taxonomy may have changed or someone may have entered one of those leads by
+hand. The rows written are the ones the server has just decided are valid.
+
+**Ambiguity is a question, not a guess.** "Batik Saree" exists under two categories, so
+a row naming only the sub-category is rejected and asks for the category column. The
+importer will not pick one.
+
+The parser is ours (`src/lib/csv.ts`, RFC 4180, with delimiter sniffing and BOM
+stripping) rather than a dependency, because the awkward parts - a quoted field
+containing a newline, a sheet Excel saved with semicolons - are a hundred lines and are
+worth being able to read. `public/lead-import-template.csv` is the header order the
+form links to, and `columns.test.ts` fails if that file and the internal column
+definitions ever disagree.
+
 ## Analytics: boards, not one dashboard
 
 Charts are drawn with **Chart.js**, and the reports are split into **boards** - one

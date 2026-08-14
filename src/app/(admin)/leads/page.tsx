@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Plus } from 'lucide-react';
+import { Plus, Upload } from 'lucide-react';
 
 import { buttonVariants } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -43,12 +43,21 @@ export default async function LeadsPage({ searchParams }: PageProps<'/leads'>) {
         title="Leads"
         description="Every enquiry, from every channel. Filter it, then work the top of the list."
         actions={
-          can(user.role, 'leads', 'create') ? (
-            <Link href="/leads/new" className={buttonVariants({ variant: 'primary' })}>
-              <Plus aria-hidden="true" />
-              Record a lead
-            </Link>
-          ) : null
+          <>
+            {can(user.role, 'imports', 'create') ? (
+              <Link href="/leads/import" className={buttonVariants({ variant: 'secondary' })}>
+                <Upload aria-hidden="true" />
+                Import a spreadsheet
+              </Link>
+            ) : null}
+
+            {can(user.role, 'leads', 'create') ? (
+              <Link href="/leads/new" className={buttonVariants({ variant: 'primary' })}>
+                <Plus aria-hidden="true" />
+                Record a lead
+              </Link>
+            ) : null}
+          </>
         }
       />
 
@@ -79,14 +88,29 @@ export default async function LeadsPage({ searchParams }: PageProps<'/leads'>) {
                 >
                   Clear filters
                 </Link>
-              ) : can(user.role, 'leads', 'create') ? (
-                <Link
-                  href="/leads/new"
-                  className={buttonVariants({ variant: 'primary', size: 'sm' })}
-                >
-                  Record the first lead
-                </Link>
-              ) : null}
+              ) : (
+                <div className="flex flex-wrap justify-center gap-2 pt-1">
+                  {can(user.role, 'leads', 'create') ? (
+                    <Link
+                      href="/leads/new"
+                      className={buttonVariants({ variant: 'primary', size: 'sm' })}
+                    >
+                      Record the first lead
+                    </Link>
+                  ) : null}
+
+                  {/* On an empty list this is usually the one people want: the history
+                      already exists, in a spreadsheet. */}
+                  {can(user.role, 'imports', 'create') ? (
+                    <Link
+                      href="/leads/import"
+                      className={buttonVariants({ variant: 'secondary', size: 'sm' })}
+                    >
+                      Import a spreadsheet
+                    </Link>
+                  ) : null}
+                </div>
+              )}
             </div>
           </CardContent>
         ) : (
