@@ -466,6 +466,66 @@ worth being able to read. `public/lead-import-template.csv` is the header order 
 form links to, and `columns.test.ts` fails if that file and the internal column
 definitions ever disagree.
 
+## Automated intake from n8n
+
+Most enquiries actually arrive as a WhatsApp or social media message, not as someone
+sitting down to fill in the lead form. n8n runs on the same VPS and watches for them;
+`POST /n8n/intake` is where it hands one over.
+
+**No session, one secret.** This is the second of the two deliberate exceptions to "no
+browser-facing API" in `AGENTS.md`. n8n is not a person who signs in, so there is no
+session cookie to check - `src/proxy.ts` explicitly lets `/n8n/*` through without one,
+the one exception to "no session cookie means straight to the login page". What proves
+the request is genuine is a shared secret, `N8N_WEBHOOK_SECRET`, used to HMAC-sign it. In
+production the endpoint is also unreachable except on the internal Docker network - the
+signature is defence in depth for that boundary, not a substitute for it.
+
+**The contract**, for wiring an n8n HTTP Request node at it:
+
+- `POST` a JSON body to `/n8n/intake`.
+- `X-Timestamp`: milliseconds since the epoch, as a string.
+- `X-Signature`: hex-encoded `HMAC-SHA256(N8N_WEBHOOK_SECRET, "${timestamp}.${rawBody}")` -
+  the timestamp and the exact request body, joined with a dot, then signed. Signing the
+  timestamp alongside the body is what stops a captured request being replayed later with
+  a fresh timestamp stapled on.
+- A request more than five minutes old (either direction - clocks drift) is rejected,
+  same as a bad signature: `401`.
+- Body fields: `message` (required, the enquiry itself); `phone`, `platform`, `name`
+  (optional free text - whatever n8n actually knows); `externalId` (optional, n8n's own
+  id for the message); `receivedAt` (optional ISO timestamp, for a backfilled or replayed
+  message where "now" would be wrong).
+- A retried delivery with the same `externalId` is answered `201` with the row it already
+  made, not a second row - so a lost response does not double an enquiry into the queue.
+
+See `src/lib/webhook-signature.ts` for the verification itself and
+`src/features/leads/intake/schemas.ts` for the exact payload shape.
+
+**Why the payload stays this thin.** Nobody has built extraction of a fabric, a size or
+a category out of a raw sentence - that is a real piece of work, probably an LLM step
+inside the n8n workflow, and it does not exist yet. Asking the endpoint to accept fields
+nothing produces would be designing a contract for a workflow that is not there. The two
+fields that _are_ resolved happen on the review screen, against the taxonomy as it stands
+that moment, not once at receipt and trusted stale afterwards: the platform, matched by
+name the same way the CSV importer matches a column value
+(`@/features/leads/import/lookups`), and the phone number, normalised the same way every
+other entry point normalises one. Everything else starts blank, exactly as it would on a
+freshly typed lead - a first message rarely says the size anyway.
+
+**The staging table, and why one exists at all.** A parsed message is a guess, and
+`leads` is the table every demand chart reads from. Writing guesses straight into it -
+one misheard platform, one phone number typoed by whatever transcribed it - would poison
+the only honest measurement of demand this business has. So a message lands in
+`lead_intake` first, `pending`, and never becomes a lead by itself. The review queue at
+`/intake` is a human doing exactly what the manual lead form always asked for: confirm
+the customer, place what was asked for in the taxonomy, and save - the same `LeadFields`
+component, seeded with a guess instead of a blank. `leads.source = 'automation'` marks
+what came through this path, the same way `'import'` marks a spreadsheet row.
+
+**`imports:create` gates the queue**, not `leads:read` or `leads:create` - the same
+permission the CSV importer uses, and the same reasoning: promoting a queue of automated
+guesses into real leads is the elevated-trust operation, not the day-to-day work of
+recording one enquiry by hand.
+
 ## Analytics: boards, not one dashboard
 
 Charts are drawn with **Chart.js**, and the reports are split into **boards** - one

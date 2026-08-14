@@ -43,6 +43,13 @@
       "when": 1786793400001,
       "tag": "0005_dry_ultron",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1786793400002,
+      "tag": "0006_cloudy_rhino",
+      "breakpoints": true
     }
   ]
 }

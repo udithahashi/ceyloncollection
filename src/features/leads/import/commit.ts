@@ -18,12 +18,11 @@
  * SERVER ONLY.
  */
 import { db } from '@/db/client';
-import { customers } from '@/db/schema/customers';
 import { leads, leadTags } from '@/db/schema/leads';
 import { APP_TIMEZONE } from '@/lib/time';
-import { sql } from 'drizzle-orm';
 
 import { resolveContactedAt } from '../contact-date';
+import { resolveCustomer } from '../persist';
 import type { ResolvedRow } from './plan';
 
 export interface CommitOutcome {
@@ -41,49 +40,23 @@ export async function commitImport(
     const customerIds = new Map<string, string>();
     let newCustomers = 0;
 
-    /*
-     * Customers first, one upsert per distinct number.
-     *
-     * `coalesce(excluded.x, customers.x)` keeps what we already know: a sheet row with a
-     * blank name must not erase a name someone typed by hand. The same statement the lead
-     * form uses, for the same reason - the phone number is the identity, and both entry
-     * points have to agree about that or the repeat counts stop meaning anything.
-     *
-     * One difference: `on_whatsapp` is not overwritten here. The form sets it because
-     * somebody ticked a box; a spreadsheet with no WhatsApp column would otherwise reset
-     * every existing customer to the importer's default.
-     */
+    // Customers first, one upsert per distinct number. `overwriteOnWhatsapp: false`
+    // because a sheet with no WhatsApp column must not reset every existing customer
+    // to the importer's default - see the note on resolveCustomer in ../persist.
     for (const row of rows) {
       if (customerIds.has(row.phone)) continue;
 
-      const [customer] = await tx
-        .insert(customers)
-        .values({
+      const customer = await resolveCustomer(
+        tx,
+        {
           phone: row.phone,
-          name: row.customerName,
+          customerName: row.customerName,
           whatsappNumber: row.whatsappNumber,
           onWhatsapp: row.onWhatsapp,
           cityId: row.cityId,
-        })
-        .onConflictDoUpdate({
-          target: customers.phone,
-          set: {
-            name: sql`coalesce(excluded.name, ${customers.name})`,
-            whatsappNumber: sql`coalesce(excluded.whatsapp_number, ${customers.whatsappNumber})`,
-            cityId: sql`coalesce(excluded.city_id, ${customers.cityId})`,
-            // A customer who was removed and appears in the sheet is a customer again.
-            deletedAt: null,
-            updatedAt: sql`now()`,
-          },
-        })
-        .returning({
-          id: customers.id,
-          // Zero only for a row this statement inserted, which is how one round trip
-          // can tell a new customer from a returning one.
-          created: sql<boolean>`(xmax = 0)`,
-        });
-
-      if (!customer) throw new Error('customer upsert returned no row');
+        },
+        { overwriteOnWhatsapp: false }
+      );
 
       customerIds.set(row.phone, customer.id);
       if (customer.created) newCustomers += 1;

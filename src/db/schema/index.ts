@@ -19,4 +19,5 @@ export * from './taxonomy';
 export * from './customers';
 export * from './leads';
 export * from './lead-images';
+export * from './lead-intake';
 export * from './customer-summary';

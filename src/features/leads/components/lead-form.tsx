@@ -44,6 +44,33 @@ export interface LeadFormProps {
   lead?: LeadDetail;
 }
 
+/**
+ * Exactly what `LeadFields` reads off a lead - a narrow slice of `LeadDetail`, not the
+ * whole thing, so a caller with no real lead yet (the intake review form, seeding a
+ * blank one with an automated guess at the phone and platform) can build one without
+ * faking every column a full read of the leads table happens to carry. `LeadDetail`
+ * already has every field below, so `LeadForm` keeps passing it here unchanged.
+ */
+export interface LeadFormSeed {
+  customerPhone: string;
+  customerName: string | null;
+  customerCityId: string | null;
+  customerOnWhatsapp: boolean;
+  contactedAt: string;
+  platformId: string;
+  statusId: string;
+  urgencyId: string | null;
+  categoryId: string | null;
+  subcategoryId: string | null;
+  clothGenderId: string | null;
+  fabricId: string | null;
+  sizeId: string | null;
+  quantity: number | null;
+  request: string | null;
+  notes: string | null;
+  tags: { id: string }[];
+}
+
 export function LeadForm({ options, today, defaultStatusId, lead }: LeadFormProps) {
   const editing = lead !== undefined;
 
@@ -117,19 +144,31 @@ export function LeadForm({ options, today, defaultStatusId, lead }: LeadFormProp
   );
 }
 
+export interface LeadFieldsProps {
+  options: LeadFormOptions;
+  today: string;
+  defaultStatusId: string | null;
+  lead?: LeadFormSeed;
+  fieldErrors: FieldErrors;
+}
+
 /**
  * Every control on the form.
  *
  * Separate from `LeadForm` so that remounting it resets the whole thing, including the
- * category state below and the state inside each picker.
+ * category state below and the state inside each picker - and so the intake review
+ * form (@/features/leads/intake/components/intake-review-form) can reuse exactly this,
+ * wrapped in its own `<form>` and its own promote/reject actions instead of `LeadForm`'s
+ * "stays open and clears after saving" behaviour, which is right for typing leads one
+ * after another and wrong for working through a queue.
  */
-function LeadFields({
+export function LeadFields({
   options,
   today,
   defaultStatusId,
   lead,
   fieldErrors,
-}: LeadFormProps & { fieldErrors: FieldErrors }) {
+}: LeadFieldsProps) {
   /**
    * The chosen category, tracked only to shorten the product list.
    *

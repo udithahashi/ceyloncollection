@@ -33,6 +33,23 @@ import { NextResponse, type NextRequest } from 'next/server';
 export const PUBLIC_PATHS = ['/login', '/two-factor', '/accept-invitation'];
 
 /**
+ * Paths that prove who they are some other way, and so must never be bounced to the
+ * login form. n8n has no session cookie to carry - it proves itself with an HMAC
+ * signature, checked inside the route itself - so redirecting it here would mean the
+ * webhook never receives a request at all, only ever the login page's HTML back at
+ * whatever address n8n thinks this endpoint lives at.
+ *
+ * A prefix list rather than exact paths, unlike `PUBLIC_PATHS`: this is one integration
+ * with room to grow a second signed route under the same prefix, and every one of them
+ * shares the same reasoning for being here.
+ */
+const SELF_AUTHENTICATING_PREFIXES = ['/n8n/'];
+
+function bypassesSessionGate(pathname: string): boolean {
+  return SELF_AUTHENTICATING_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+}
+
+/**
  * The session cookie's name. `cc` is the `cookiePrefix` configured in @/lib/auth;
  * Better Auth appends `.session_token`.
  *
@@ -88,7 +105,7 @@ export function proxy(request: NextRequest): NextResponse {
   const { pathname, search } = request.nextUrl;
   const hasSessionCookie = request.cookies.has(SESSION_COOKIE);
 
-  if (!hasSessionCookie && !isPublicPath(pathname)) {
+  if (!hasSessionCookie && !isPublicPath(pathname) && !bypassesSessionGate(pathname)) {
     const loginUrl = new URL('/login', request.url);
     // Only a path is carried across, and `safeRedirect` validates it again on the
     // way back out. A `next` value is attacker-controlled input.

@@ -1,5 +1,6 @@
 import {
   BarChart3,
+  Bot,
   Inbox,
   LayoutDashboard,
   Settings,
@@ -27,7 +28,7 @@ export type NavItem = {
    * the real route tree, so this widens by itself as pages are added - and a
    * typo becomes a type error rather than a broken link.
    */
-  href?: '/' | '/team' | '/taxonomy' | '/leads' | '/customers' | '/analytics';
+  href?: '/' | '/team' | '/taxonomy' | '/leads' | '/customers' | '/analytics' | '/intake';
   /** Shown as a hint under the label. */
   description?: string;
   /**
@@ -69,6 +70,9 @@ export const navSections: readonly NavSection[] = [
     items: [
       { label: 'Leads', icon: Inbox, href: '/leads', permission: 'leads:read' },
       { label: 'Customers', icon: Users, href: '/customers', permission: 'customers:read' },
+      // `imports:create` rather than `leads:read`: this is the review side of the
+      // n8n intake, the same elevated-trust gate the CSV importer already uses.
+      { label: 'Intake', icon: Bot, href: '/intake', permission: 'imports:create' },
     ],
   },
   {

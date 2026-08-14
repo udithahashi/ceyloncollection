@@ -37,15 +37,17 @@ npm run verify        # typecheck, lint, format check, tests
 npm run dev           # http://localhost:3000
 ```
 
-At the last commit: **577 tests across 25 files, all passing**; `npm run build` clean;
-migrations through `0005_dry_ultron` applied. `git log` is the honest history — every
-commit message explains the reasoning behind that change, so `git log -p` on a feature
-is often faster than reading the files cold.
+At the last commit: `main` is even with `origin/main`, everything already pushed.
+`git log` is the honest history — every commit message explains the reasoning behind
+that change, so `git log -p` on a feature is often faster than reading the files cold.
 
-**`main` is currently 5 commits ahead of `origin/main`.** The GitHub repo
-(`github.com/udithahashi/ceyloncollection`) exists but the recent work is local only.
-Pushing needs the owner's GitHub credentials — ask him before you push, and do not
-force-push anything.
+**The working tree is currently not clean.** The n8n intake feature described below is
+built and verified (`npm run verify` passes: 587 tests across 27 files, typecheck, lint,
+format; migrations through `0006_cloudy_rhino` applied) but sits uncommitted, waiting on
+the owner's own look at it and the browser walkthrough of `/intake` that neither he nor
+the agent that built it has done yet — see "Where the last session stopped". Do not
+discard these changes; check `git status` and read them before assuming they are scratch
+work.
 
 ## Where the project stands
 
@@ -64,12 +66,16 @@ Built, working, committed:
 | Analytics             | Boards, not one dashboard. Demand board built with Chart.js; money, stock and orders declared as planned             |
 | Demo data             | `npm run db:demo` invents ~140 leads; `npm run db:demo -- clear` removes them                                        |
 
+Built, working, **not yet committed** — see "Where the last session stopped":
+
+| Area       | State                                                                                                          |
+| ---------- | -------------------------------------------------------------------------------------------------------------- |
+| n8n intake | `POST /n8n/intake`, HMAC-signed, staging table `lead_intake`, review queue at `/intake` — see docs/CONCEPTS.md |
+
 Not built yet:
 
 - **The public website.** Nothing exists under a `(public)` route group. The brand design
   system is ready for it; the reference design is `reference/public-website.html`.
-- **n8n intake.** `N8N_WEBHOOK_SECRET` is validated and a rate-limit rule exists, but
-  there is no endpoint, no staging table and no review queue. No code for it at all.
 - **Brand assets.** No monogram, no favicons, no empty-state illustrations. `BrandMark`
   is currently type only.
 - **Deployment.** No `Dockerfile`, no `docker/compose.prod.yml`, no backup script. CI
@@ -83,28 +89,30 @@ Not built yet:
 
 In the order the owner and I agreed. He may reprioritise — ask if it is not obvious.
 
-### 1. n8n intake (the next phase)
+### 1. n8n intake — built, awaiting the owner's look and a commit
 
-**Why it matters.** Enquiries arrive as social media messages. Typing each one is the
-work this system exists to remove. n8n already runs on the same Contabo VPS.
+Done: `POST /n8n/intake` (HMAC-signed, `crypto.timingSafeEqual`, five-minute replay
+window, idempotent on `externalId`), the `lead_intake` staging table, and the review
+queue at `/intake` that promotes a staged row to a lead or dismisses it. Full design and
+the exact payload contract for wiring an n8n HTTP node are in docs/CONCEPTS.md under
+"Automated intake from n8n". `resolveCustomer` was extracted to
+`src/features/leads/persist.ts` as planned, and is now shared by the manual form, the
+CSV importer and this.
 
-Decisions already made, so do not relitigate them:
+**Not yet done, on purpose:** n8n is not asked to guess taxonomy (fabric, size,
+category…) from the message text — nobody has built that extraction, and CONCEPTS.md
+explains why the contract stays thin until someone does. Also not done: actually
+configuring an n8n workflow to call this endpoint, which needs the owner's n8n instance
+and is his to wire up using the documented contract.
 
-- The endpoint is **HMAC-signed**, not session-authenticated, and reachable **only on the
-  internal Docker network**. It is the one category of HTTP endpoint `AGENTS.md` permits
-  besides the image route.
-- Messages land in a **staging table**, not directly in `leads`. A parsed WhatsApp
-  message is a guess: it may name a fabric that does not exist, or no phone number at
-  all. Writing guesses straight into the table that feeds the charts would poison the
-  only honest measurement of demand this business has.
-- A **review queue** in the back office promotes a staged row to a lead, with the
-  taxonomy resolution shown and editable. `leads.source = 'automation'` already exists
-  for the rows that come out of it.
-- Reuse, do not duplicate: `@/features/leads/import/lookups.ts` already resolves free
-  text to taxonomy ids by name or slug, and it was written with this in mind.
-- Verify the signature with `crypto.timingSafeEqual`, include a timestamp in the signed
-  payload and reject anything older than a few minutes, so a captured request cannot be
-  replayed.
+**What still needs a human:** the whole feature is unreviewed and uncommitted, and
+nobody has clicked through `/intake` in a browser yet — the agent that built it had no
+login credentials for the one TOTP-protected owner account and could not. It did verify
+the webhook itself end-to-end with real signed HTTP requests against the running dev
+server (valid signature, wrong secret, stale timestamp, malformed body, idempotent
+retry — all behaved correctly, see git history once committed), and `npm run verify`
+passes in full. Two staged rows from that testing are sitting in the local dev database
+at `/intake` right now — a real, if synthetic, first thing to look at.
 
 ### 2. Brand assets (needs the owner)
 
@@ -146,14 +154,12 @@ charts to the demand board — that separation is the point of the boards struct
   that the page has real numbers. Consider moving it to a dev-only route if it is still
   useful.
 - **Activity log page.** `activityLog:read` exists, the rows exist, nothing shows them.
-- **Extract the customer upsert.** `resolveCustomer` in `src/features/leads/actions.ts`
-  and the upsert inside `src/features/leads/import/commit.ts` are the same logic written
-  twice. The n8n intake would make it three copies. Extract it to
-  `src/features/leads/persist.ts` **when you do the intake**, so the third caller is what
-  pays for the refactor.
 - **Browser walkthroughs the owner has not done yet:** add a photo to a lead (a portrait
   phone photo, to confirm it is not sideways), import `public/lead-import-template.csv`,
-  and look at `/analytics/demand` in both themes.
+  look at `/analytics/demand` in both themes, and — new — open `/intake`, review one of
+  the two staged rows already sitting there, promote it, then dismiss the other. That
+  last one is not optional polish: it is the one part of the n8n intake work nobody has
+  actually clicked through yet.
 
 ## Traps that have already caught someone
 
@@ -202,6 +208,19 @@ correct and the test was wrong, which is the more embarrassing way round.
 **PowerShell is the shell here.** No heredocs. For a multi-line commit message, write
 the message to a file and use `git commit -F`. Paths with spaces need quoting.
 
+**`src/proxy.ts` redirects anything with no session cookie to `/login`, by default
+including a route that was never supposed to need one.** Building `/n8n/intake` and
+testing it with signed `curl`/`fetch` requests got a `200` back containing the login
+page's HTML — the signature check never even ran, because the proxy caught the
+cookie-less request first and redirected before the route handler saw it. `PUBLIC_PATHS`
+was the wrong fix: `proxy.test.ts` asserts every entry there is a real page under
+`(auth)`, on purpose, so a webhook route does not belong in that list. The actual fix is
+`SELF_AUTHENTICATING_PREFIXES` in `src/proxy.ts` — paths that prove themselves some other
+way and must bypass the session gate entirely, currently just `/n8n/`. **Any new
+non-session HTTP endpoint needs an entry there, or it will silently never receive a
+request in the first place**, and the failure looks exactly like a working endpoint
+rejecting everything, not like a routing problem.
+
 ## Deliberate deviations - do not "fix" these
 
 Two things look like rule violations and are not. Both are documented at length in the
@@ -238,13 +257,19 @@ Worth respecting; it came up explicitly.
 
 ## Where the last session stopped
 
-The final commit is `64ea98c`, "Attach reference photos to a lead". Immediately before
-it, `6716f01` added the spreadsheet importer, and `559964f` fixed the `server-only` leak
-that was crashing `/customers`.
+The final commit is `e7aa54e`, "Write the handover, so the next session starts
+informed" — this file's previous revision. `main` was even with `origin/main` at that
+point and stayed that way; nothing has been pushed since.
 
-Nothing is half-finished in the working tree: `git status` is clean, verify passes, the
-build is clean. The next piece of work is **the n8n intake** as described above, unless
-the owner says otherwise.
+The session after that one built the n8n intake feature described under "The plan from
+here" § 1: the schema, the signed endpoint, the review queue, and the `persist.ts`
+refactor the previous handover asked for. `npm run verify` passes in full and the
+webhook was exercised end-to-end against a running dev server. **None of it is
+committed.** `git status` will show a working tree that is not clean — read it, do not
+discard it. The owner has not reviewed this code and has not clicked through `/intake`
+himself yet; both are real gaps, not formalities, given "he tests in the browser
+himself" below.
 
-Two loose ends that are his to decide, not yours to assume: the five unpushed commits,
-and whether brand assets or the intake comes first.
+Two things are his to decide, not yours to assume: whether this uncommitted work gets
+committed as one change or split up, and whether brand assets or deployment comes next
+once it lands.

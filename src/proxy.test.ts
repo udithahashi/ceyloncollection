@@ -9,9 +9,10 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { NextRequest } from 'next/server';
 import { describe, expect, it } from 'vitest';
 
-import { PUBLIC_PATHS } from './proxy';
+import { PUBLIC_PATHS, proxy } from './proxy';
 
 const AUTH_GROUP = join(process.cwd(), 'src', 'app', '(auth)');
 
@@ -39,5 +40,17 @@ describe('PUBLIC_PATHS', () => {
       expect(path.startsWith('/'), `${path} must start with a slash`).toBe(true);
       expect(path.endsWith('/'), `${path} must not end with a slash`).toBe(false);
     }
+  });
+});
+
+describe('the n8n intake route', () => {
+  it('is never redirected to the login page, even with no session cookie', () => {
+    // n8n has no session cookie to send - it proves itself with an HMAC signature
+    // inside the route. If the proxy ever redirected this, the webhook would receive
+    // nothing but the login page's HTML, silently, forever.
+    const request = new NextRequest('http://localhost:3000/n8n/intake', { method: 'POST' });
+    const response = proxy(request);
+
+    expect(response.headers.get('location')).toBeNull();
   });
 });

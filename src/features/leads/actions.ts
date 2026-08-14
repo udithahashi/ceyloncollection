@@ -22,125 +22,23 @@
 import { revalidatePath } from 'next/cache';
 
 import { db } from '@/db/client';
-import { customers } from '@/db/schema/customers';
-import { leads, leadTags } from '@/db/schema/leads';
-import { subcategories } from '@/db/schema/taxonomy';
+import { leads } from '@/db/schema/leads';
 import { formToObject, parseInput, runAction } from '@/lib/actions';
 import { fail, ok, type ActionResult } from '@/lib/actions/result';
 import { diffFields, logActivity } from '@/lib/activity';
 import { authorize } from '@/lib/auth/session';
 import { maskPhone } from '@/lib/phone';
 import { APP_TIMEZONE } from '@/lib/time';
-import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
+import { and, eq, isNull, sql } from 'drizzle-orm';
 
 import { isFutureDay, resolveContactedAt } from './contact-date';
+import { categoryOf, resolveCustomer, syncTags } from './persist';
 import { changeStatusSchema, createLeadSchema, leadRowSchema, updateLeadSchema } from './schemas';
 
 /** What a successful save hands back, so the form can confirm it by name. */
 export interface SavedLead {
   id: string;
   reference: number;
-}
-
-type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
-
-/**
- * The customer for a phone number: found, updated, or created.
- *
- * `on conflict` rather than "select, then insert or update", because the second one
- * has a race between the two statements that the n8n intake would eventually find.
- *
- * `coalesce(excluded.x, customers.x)` on the optional fields means a lead entered
- * without a name cannot blank the name we already had. The blank on a later enquiry is
- * absence of information, not a correction.
- */
-async function resolveCustomer(
-  tx: Tx,
-  input: {
-    phone: string;
-    customerName: string | null;
-    whatsappNumber: string | null;
-    onWhatsapp: boolean;
-    cityId: string | null;
-  }
-): Promise<{ id: string; created: boolean }> {
-  const [row] = await tx
-    .insert(customers)
-    .values({
-      phone: input.phone,
-      name: input.customerName,
-      whatsappNumber: input.whatsappNumber,
-      onWhatsapp: input.onWhatsapp,
-      cityId: input.cityId,
-    })
-    .onConflictDoUpdate({
-      target: customers.phone,
-      set: {
-        name: sql`coalesce(excluded.name, ${customers.name})`,
-        whatsappNumber: sql`coalesce(excluded.whatsapp_number, ${customers.whatsappNumber})`,
-        cityId: sql`coalesce(excluded.city_id, ${customers.cityId})`,
-        onWhatsapp: sql`excluded.on_whatsapp`,
-        // A customer who was removed and has now written again is a customer again.
-        // Restoring them keeps their history attached instead of starting a second
-        // identity for the same number, which the unique index would refuse anyway.
-        deletedAt: null,
-        updatedAt: sql`now()`,
-      },
-    })
-    .returning({
-      id: customers.id,
-      // Postgres exposes the row's transaction id in `xmax`, which is zero only for a
-      // row this statement inserted. It is the one way to tell an insert from an
-      // update in a single round trip.
-      created: sql<boolean>`(xmax = 0)`,
-    });
-
-  if (!row) throw new Error('customer upsert returned no row');
-
-  return row;
-}
-
-/**
- * The category a sub-category belongs to.
- *
- * Looked up rather than trusted, so the pair written to `leads` always satisfies the
- * composite foreign key.
- */
-async function categoryOf(tx: Tx, subcategoryId: string): Promise<string | null> {
-  const [row] = await tx
-    .select({ categoryId: subcategories.categoryId })
-    .from(subcategories)
-    .where(and(eq(subcategories.id, subcategoryId), isNull(subcategories.deletedAt)))
-    .limit(1);
-
-  return row?.categoryId ?? null;
-}
-
-/** Replaces a lead's tags with exactly the set given. */
-async function syncTags(tx: Tx, leadId: string, tagIds: string[]): Promise<void> {
-  const existing = await tx
-    .select({ tagId: leadTags.tagId })
-    .from(leadTags)
-    .where(eq(leadTags.leadId, leadId));
-
-  const before = new Set(existing.map((row) => row.tagId));
-  const after = new Set(tagIds);
-
-  const removed = [...before].filter((id) => !after.has(id));
-  const added = [...after].filter((id) => !before.has(id));
-
-  // Only the difference is written. Delete-all-then-reinsert would be simpler and
-  // would churn the table - and would show up in the log as twenty changes when one
-  // tag was ticked.
-  if (removed.length > 0) {
-    await tx
-      .delete(leadTags)
-      .where(and(eq(leadTags.leadId, leadId), inArray(leadTags.tagId, removed)));
-  }
-
-  if (added.length > 0) {
-    await tx.insert(leadTags).values(added.map((tagId) => ({ leadId, tagId })));
-  }
 }
 
 /** Records a lead. */
@@ -166,7 +64,7 @@ export async function createLeadAction(
     const contactedAt = resolveContactedAt(input.contactedOn, APP_TIMEZONE);
 
     const saved = await db.transaction(async (tx) => {
-      const customer = await resolveCustomer(tx, input);
+      const customer = await resolveCustomer(tx, input, { overwriteOnWhatsapp: true });
 
       const categoryId =
         input.subcategoryId === null ? input.categoryId : await categoryOf(tx, input.subcategoryId);
@@ -255,7 +153,7 @@ export async function updateLeadAction(
 
       if (!before) return null;
 
-      const customer = await resolveCustomer(tx, input);
+      const customer = await resolveCustomer(tx, input, { overwriteOnWhatsapp: true });
 
       const categoryId =
         input.subcategoryId === null ? input.categoryId : await categoryOf(tx, input.subcategoryId);

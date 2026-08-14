@@ -50,6 +50,9 @@ export const activityActions = [
   'taxonomy.retired',
   'taxonomy.restored',
   'import.completed',
+  'intake.received',
+  'intake.promoted',
+  'intake.rejected',
   'settings.updated',
 ] as const;
 
