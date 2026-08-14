@@ -16,6 +16,11 @@ stock, costs and shipping. There is no public-facing website yet.
 
 Read `docs/CONCEPTS.md` for the architecture and `docs/LOCAL-DEV.md` for commands.
 
+**If you are new to this repository, start with `docs/HANDOVER.md`.** It carries the
+current state, the remaining plan, the traps that have already cost time, and the two
+deliberate rule exceptions that look like mistakes. Keep it current: when you finish a
+phase or discover a trap, the next person learns it there.
+
 ## Stack
 
 | Concern    | Choice                                               |

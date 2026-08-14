@@ -52,6 +52,7 @@ go wrong and prints the exact command to fix each one.
 
 | Document                                           | Read it when                                            |
 | -------------------------------------------------- | ------------------------------------------------------- |
+| [docs/HANDOVER.md](docs/HANDOVER.md)               | You are picking the project up, or handing it over      |
 | [docs/CONCEPTS.md](docs/CONCEPTS.md)               | You want to understand the stack and why it is this way |
 | [docs/LOCAL-DEV.md](docs/LOCAL-DEV.md)             | You are working day to day                              |
 | [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Something is broken                                     |
