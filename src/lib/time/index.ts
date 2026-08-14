@@ -12,10 +12,13 @@ import { env } from '@/lib/env';
 
 import {
   calendarDateInZone,
+  calendarDaysAgoInZone,
   daysBetweenInZone,
   daysSinceInZone,
+  endOfCalendarDayInZone,
   endOfDayInZone,
   isSameDayInZone,
+  startOfCalendarDayInZone,
   startOfDayInZone,
 } from './calendar';
 
@@ -45,6 +48,19 @@ export const endOfBusinessDay = (instant: Date | string | number) =>
 /** The business-time calendar date as `YYYY-MM-DD`, for grouping and CSV export. */
 export const businessDate = (instant: Date | string | number) =>
   calendarDateInZone(instant, APP_TIMEZONE);
+
+/** Midnight at the start of a `YYYY-MM-DD` date, in business time. */
+export const startOfCalendarDay = (day: string) => startOfCalendarDayInZone(day, APP_TIMEZONE);
+
+/** The final millisecond of a `YYYY-MM-DD` date, in business time. */
+export const endOfCalendarDay = (day: string) => endOfCalendarDayInZone(day, APP_TIMEZONE);
+
+/** Today's date in business time, as `YYYY-MM-DD`. For defaulting a date input. */
+export const todayInBusinessTime = () => calendarDateInZone(new Date(), APP_TIMEZONE);
+
+/** The date `days` ago in business time, as `YYYY-MM-DD`. For "quiet for a week". */
+export const calendarDaysAgo = (days: number, now?: Date) =>
+  calendarDaysAgoInZone(days, APP_TIMEZONE, now);
 
 /**
  * Formatters are constructed once and reused. Building an Intl.DateTimeFormat is

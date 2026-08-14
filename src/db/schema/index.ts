@@ -16,3 +16,6 @@ export * from './auth';
 export * from './invitation';
 export * from './activity-log';
 export * from './taxonomy';
+export * from './customers';
+export * from './leads';
+export * from './customer-summary';

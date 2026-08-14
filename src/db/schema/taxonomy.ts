@@ -202,6 +202,12 @@ export const subcategories = pgTable(
     uniqueIndex('subcategories_category_slug_key').on(table.categoryId, table.slug),
     index('subcategories_category_idx').on(table.categoryId),
     index('subcategories_sort_idx').on(table.sortOrder, table.name),
+    /**
+     * Redundant on its own - `id` is already unique - but a composite foreign key
+     * needs a matching unique constraint to point at. `leads` uses it to make
+     * "Footwear / Batik Frock" impossible at the database level.
+     */
+    uniqueIndex('subcategories_id_category_key').on(table.id, table.categoryId),
   ]
 );
 

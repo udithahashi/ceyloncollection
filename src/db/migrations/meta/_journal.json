@@ -15,6 +15,27 @@
       "when": 1786704728873,
       "tag": "0001_steady_hercules",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1786707072571,
+      "tag": "0002_messy_rawhide_kid",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1786707137437,
+      "tag": "0003_customer_summary",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1786793400000,
+      "tag": "0004_customer_summary_open_ready",
+      "breakpoints": true
     }
   ]
 }

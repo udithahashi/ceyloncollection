@@ -16,7 +16,7 @@
  * local timezone. The env-bound convenience wrappers live in ./index.ts.
  */
 import { TZDate } from '@date-fns/tz';
-import { differenceInCalendarDays, endOfDay, startOfDay } from 'date-fns';
+import { differenceInCalendarDays, endOfDay, startOfDay, subDays } from 'date-fns';
 
 /** Reinterprets an instant in the given timezone without shifting the instant. */
 export function inZone(instant: Date | string | number, timeZone: string): TZDate {
@@ -31,6 +31,40 @@ export function startOfDayInZone(instant: Date | string | number, timeZone: stri
 /** The last millisecond of the day that `instant` falls on, in `timeZone`. */
 export function endOfDayInZone(instant: Date | string | number, timeZone: string): Date {
   return new Date(endOfDay(inZone(instant, timeZone)).getTime());
+}
+
+/**
+ * Midnight at the start of a `YYYY-MM-DD` date, in `timeZone`.
+ *
+ * The counterpart to `calendarDateInZone`, and the only correct way to turn a date
+ * picked in a form into an instant. The tempting one-liner -
+ * `startOfDayInZone(new Date('2026-03-04T00:00:00'), tz)` - parses the string in the
+ * *server's* timezone, so it produces different instants on a laptop and in a
+ * container, and lands on the wrong calendar day whenever the two are far enough
+ * apart. Building the date from its components in the target zone has no such
+ * ambiguity.
+ *
+ * @param day `YYYY-MM-DD`
+ */
+export function startOfCalendarDayInZone(day: string, timeZone: string): Date {
+  const parts = day.split('-').map(Number);
+
+  // `Number('abc')` is NaN rather than undefined, and a NaN reaches TZDate happily to
+  // produce an Invalid Date - which then fails much later, somewhere less obvious.
+  if (parts.length !== 3 || !parts.every(Number.isFinite)) {
+    throw new RangeError(`Expected a YYYY-MM-DD date, got "${day}".`);
+  }
+
+  // The defaults are unreachable after the check above; they exist so the tuple is
+  // typed without a non-null assertion.
+  const [year = 0, month = 1, date = 1] = parts;
+
+  return new Date(new TZDate(year, month - 1, date, 0, 0, 0, 0, timeZone).getTime());
+}
+
+/** The last millisecond of a `YYYY-MM-DD` date, in `timeZone`. */
+export function endOfCalendarDayInZone(day: string, timeZone: string): Date {
+  return endOfDayInZone(startOfCalendarDayInZone(day, timeZone), timeZone);
 }
 
 /**
@@ -69,6 +103,22 @@ export function isSameDayInZone(
   timeZone: string
 ): boolean {
   return daysBetweenInZone(a, b, timeZone) === 0;
+}
+
+/**
+ * The calendar date `days` before today in `timeZone`, as `YYYY-MM-DD`.
+ *
+ * For turning "quiet for 7 days" into a date a query can compare against. Counted in
+ * calendar days rather than by subtracting milliseconds, so it agrees with
+ * `daysSinceInZone` - the two are used on the same screen, and a filter that disagrees
+ * with the column beside it looks like a bug in both.
+ */
+export function calendarDaysAgoInZone(
+  days: number,
+  timeZone: string,
+  now: Date = new Date()
+): string {
+  return calendarDateInZone(subDays(inZone(now, timeZone), days), timeZone);
 }
 
 /** The calendar date of `instant` in `timeZone`, as `YYYY-MM-DD`. */

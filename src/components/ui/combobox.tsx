@@ -55,6 +55,20 @@ export interface ComboboxProps {
   className?: string;
   /** Text for the "nothing matched" line, in the caller's own words. */
   emptyMessage?: string;
+  /**
+   * Adds an option that clears the choice, labelled with this text.
+   *
+   * Needed wherever blank is a meaningful answer - on a lead, "they did not say which
+   * fabric" is information, and a picker you cannot empty makes it unrecordable.
+   */
+  clearLabel?: string;
+  /**
+   * Told when the selection changes.
+   *
+   * The component stays uncontrolled: this is for a caller that needs to react to a
+   * choice, such as narrowing a second list, not for owning the value.
+   */
+  onValueChange?: (value: string) => void;
 }
 
 /** Case- and punctuation-insensitive contains, so "mens" finds "Men's Wear". */
@@ -85,6 +99,8 @@ export function Combobox({
   disabled = false,
   className,
   emptyMessage = 'Nothing matched.',
+  clearLabel,
+  onValueChange,
 }: ComboboxProps) {
   const generatedId = useId();
   const inputId = id ?? `${name}-${generatedId}`;
@@ -99,12 +115,25 @@ export function Combobox({
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
 
-  const visible = useMemo(
-    () => options.filter((option) => matches(option, query)),
-    [options, query]
+  /**
+   * The clear entry is prepended rather than being a separate control beside the
+   * input: it is then reachable by the same arrow keys and the same search box as
+   * every other choice, instead of being a button only a mouse user finds.
+   */
+  const choices = useMemo(
+    () =>
+      clearLabel === undefined || selected === ''
+        ? options
+        : [{ value: '', label: clearLabel }, ...options],
+    [clearLabel, options, selected]
   );
 
-  const selectedOption = options.find((option) => option.value === selected);
+  const visible = useMemo(
+    () => choices.filter((option) => matches(option, query)),
+    [choices, query]
+  );
+
+  const selectedOption = options.find((option) => option.value === selected && option.value !== '');
 
   const close = useCallback(() => {
     setOpen(false);
@@ -133,6 +162,7 @@ export function Combobox({
   function commit(option: ComboboxOption) {
     if (option.disabled) return;
     setSelected(option.value);
+    onValueChange?.(option.value);
     close();
     inputRef.current?.focus();
   }

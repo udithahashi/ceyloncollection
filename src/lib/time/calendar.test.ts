@@ -4,11 +4,68 @@ import {
   calendarDateInZone,
   daysBetweenInZone,
   daysSinceInZone,
+  endOfCalendarDayInZone,
   isSameDayInZone,
+  startOfCalendarDayInZone,
   startOfDayInZone,
 } from './calendar';
 
 const QATAR = 'Asia/Qatar'; // UTC+3 year round, no daylight saving.
+
+describe('startOfCalendarDayInZone', () => {
+  it('returns local midnight as a UTC instant', () => {
+    // Midnight on 4 March in Doha is 21:00 on 3 March in UTC.
+    expect(startOfCalendarDayInZone('2026-03-04', QATAR).toISOString()).toBe(
+      '2026-03-03T21:00:00.000Z'
+    );
+
+    expect(startOfCalendarDayInZone('2026-03-04', 'UTC').toISOString()).toBe(
+      '2026-03-04T00:00:00.000Z'
+    );
+  });
+
+  it('round-trips through calendarDateInZone in any timezone', () => {
+    // The property that matters: a date in, the same date back out. This is what fails
+    // when the date string is parsed in the server's own timezone instead of the
+    // target one.
+    for (const zone of ['Asia/Qatar', 'UTC', 'America/Los_Angeles', 'Pacific/Kiritimati']) {
+      for (const day of ['2026-01-01', '2026-03-01', '2026-06-30', '2026-12-31']) {
+        const instant = startOfCalendarDayInZone(day, zone);
+        expect(calendarDateInZone(instant, zone), `${day} in ${zone}`).toBe(day);
+      }
+    }
+  });
+
+  it('lands on the right side of a daylight-saving change', () => {
+    // London springs forward on 29 March 2026. Midnight that day is still GMT.
+    expect(startOfCalendarDayInZone('2026-03-29', 'Europe/London').toISOString()).toBe(
+      '2026-03-29T00:00:00.000Z'
+    );
+
+    // The day after, it is BST, so local midnight is 23:00 the previous day in UTC.
+    expect(startOfCalendarDayInZone('2026-03-30', 'Europe/London').toISOString()).toBe(
+      '2026-03-29T23:00:00.000Z'
+    );
+  });
+
+  it('refuses something that is not a date', () => {
+    expect(() => startOfCalendarDayInZone('not-a-date', QATAR)).toThrow(RangeError);
+  });
+});
+
+describe('endOfCalendarDayInZone', () => {
+  it('covers the whole day without spilling into the next', () => {
+    // A date filter compares with `<=`, so the boundary has to be the last
+    // millisecond: one second later and 23:59:59.5 falls outside "up to the 4th".
+    expect(endOfCalendarDayInZone('2026-03-04', QATAR).toISOString()).toBe(
+      '2026-03-04T20:59:59.999Z'
+    );
+
+    expect(calendarDateInZone(endOfCalendarDayInZone('2026-03-04', QATAR), QATAR)).toBe(
+      '2026-03-04'
+    );
+  });
+});
 
 describe('calendarDateInZone', () => {
   it('reports the Doha date, not the UTC date, for late-evening instants', () => {

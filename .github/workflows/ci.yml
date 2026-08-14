@@ -46,8 +46,25 @@ jobs:
       - name: Check formatting
         run: npm run format:check
 
+      # The suite is unit tests, but several modules import the validated env
+      # singleton, which refuses to load if configuration is missing - so the
+      # runner needs a syntactically valid environment even though nothing here
+      # connects to anything. The secrets are throwaway values of the right shape,
+      # not credentials: there is nothing for them to open.
+      #
+      # DATABASE_URL points at a port with nothing behind it on purpose. The few
+      # tests that would use a database check whether one answers and skip when it
+      # does not, so this proves that path works rather than quietly bypassing it.
       - name: Test
         run: npm run test
+        env:
+          APP_ENV: test
+          APP_URL: http://localhost:3000
+          BETTER_AUTH_URL: http://localhost:3000
+          DATABASE_URL: postgresql://ci:ci@127.0.0.1:1/ci_no_database
+          DISABLE_REDIS: "true"
+          BETTER_AUTH_SECRET: ci-only-not-a-real-secret-000000000000
+          N8N_WEBHOOK_SECRET: ci-only-not-a-real-secret-000000000000
 
       # Dependency vulnerabilities. Set to `high` rather than `moderate` on
       # purpose: moderate advisories in build-only tooling would otherwise block
