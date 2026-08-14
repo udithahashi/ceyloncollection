@@ -325,6 +325,48 @@ Two consequences worth remembering:
   pairing on the public site, rounded versus square, sentence case versus
   capitals. Unifying them by accident fails CI.
 
+## The taxonomy
+
+Ten lists - statuses, platforms, garment gender, sizes, cities, urgency, fabrics,
+categories, sub-categories, tags - describe every lead. They are **tables, not
+enums**, because every one of them will change: a new fabric arrives, a platform
+stops being used, a sub-category turns out to be two. As an enum each change is a
+migration and a deploy; as rows it is an edit on a page.
+
+Three distinctions in there are worth knowing, because they are what make the rest
+safe.
+
+**Name versus slug.** The name is yours to change. The slug is generated from it
+once, at creation, and then never moves - not even when the name does. Three things
+depend on that: the seed script, which must be safe to re-run; the n8n intake,
+which arrives with text like `whatsapp` and has to resolve it without a human; and
+the CSV import of your existing spreadsheet. Rename "Lost/Cancelled" to "Closed"
+and every label updates while `lost-cancelled` keeps working.
+
+**Retired versus deleted.** Retiring (`is_active` false) takes a value out of the
+dropdowns and leaves it readable on every lead that already uses it - "Imo", when
+nobody uses Imo any more. Deleting (`deleted_at`) is for a value created by
+mistake, needs the `taxonomy:delete` permission, and is refused while anything
+points at the row. Because nothing is ever hard-deleted, leads can reference these
+rows with `on delete restrict` and no lead can lose its history.
+
+**Order is data.** The status list is the funnel, and a picker that offers
+"Delivered" above "Contacted" invites mistakes. Position is `sort_order`, counted in
+tens so a value can be slotted between two others, and it is changed only by the
+move buttons - which swap two rows in one transaction. It is deliberately not a
+form field: an edit submitted without it would silently send the row to the top.
+
+One page serves all ten lists. What differs between them - the extra columns, the
+labels, whether rows hang off a parent - is declared in
+`src/features/taxonomy/registry.ts`, and the Zod schemas are generated from it, so
+a new taxonomy cannot arrive with an unvalidated field. `registry.test.ts` compares
+the registry against the actual table columns, so a column nobody declared fails CI
+rather than being invisible in the UI.
+
+Sub-category slugs are unique **per category** rather than globally. That is not an
+oversight: the business's own list has "Batik Saree" under both Batik Wear and
+Sarees & Osari, because one is a craft and the other a garment type.
+
 ## Configuration
 
 `src/lib/env/schema.ts` declares every variable the app needs, with rules. On

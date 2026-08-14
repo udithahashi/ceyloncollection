@@ -44,6 +44,11 @@ export const activityActions = [
   'taxonomy.updated',
   'taxonomy.deleted',
   'taxonomy.reordered',
+  // Retiring is not deleting: the value stays readable on every lead that used it,
+  // it simply stops being offered. Worth its own action because it is the common
+  // case and "deleted" in a log would misdescribe it.
+  'taxonomy.retired',
+  'taxonomy.restored',
   'import.completed',
   'settings.updated',
 ] as const;

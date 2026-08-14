@@ -21,6 +21,7 @@
     "dev:reset": "npm run dev:destroy && npm run dev:up && node scripts/wait-for-db.mjs",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx scripts/migrate.mts",
+    "db:seed": "tsx scripts/seed.mts",
     "db:studio": "drizzle-kit studio",
     "db:check": "drizzle-kit check",
     "auth:create-owner": "tsx scripts/create-owner.mts",

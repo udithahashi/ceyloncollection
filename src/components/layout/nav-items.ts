@@ -27,7 +27,7 @@ export type NavItem = {
    * the real route tree, so this widens by itself as pages are added - and a
    * typo becomes a type error rather than a broken link.
    */
-  href?: '/' | '/team';
+  href?: '/' | '/team' | '/taxonomy';
   /** Shown as a hint under the label. */
   description?: string;
   /**
@@ -67,7 +67,7 @@ export const navSections: readonly NavSection[] = [
   {
     heading: 'Configuration',
     items: [
-      { label: 'Taxonomy', icon: Tags, permission: 'taxonomy:read' },
+      { label: 'Taxonomy', icon: Tags, href: '/taxonomy', permission: 'taxonomy:read' },
       { label: 'Team', icon: ShieldCheck, href: '/team', permission: 'users:manage' },
       { label: 'Settings', icon: Settings, permission: 'settings:read' },
     ],

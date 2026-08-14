@@ -15,3 +15,4 @@ export * from './columns';
 export * from './auth';
 export * from './invitation';
 export * from './activity-log';
+export * from './taxonomy';

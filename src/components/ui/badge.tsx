@@ -2,6 +2,7 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import type { ComponentProps } from 'react';
 
 import { cn } from '@/lib/cn';
+import type { BadgeTone } from '@/lib/theme/tones';
 
 /**
  * A small status pill: lead status, customer type, urgency.
@@ -20,6 +21,8 @@ export const badgeVariants = cva(
   ),
   {
     variants: {
+      // `satisfies` is the compile-time link to the tone list the database
+      // constrains its columns to: add a tone there and this stops building.
       tone: {
         neutral: 'border-line-subtle bg-surface-inset text-ink-secondary',
         accent: 'border-line-focus/40 bg-action-soft text-action-on-soft',
@@ -27,7 +30,7 @@ export const badgeVariants = cva(
         warning: 'border-warning-line bg-warning-bg text-warning-ink',
         error: 'border-error-line bg-error-bg text-error-ink',
         info: 'border-info-line bg-info-bg text-info-ink',
-      },
+      } satisfies Record<BadgeTone, string>,
     },
     defaultVariants: { tone: 'neutral' },
   }

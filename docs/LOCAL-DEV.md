@@ -22,8 +22,14 @@ from the terminal:
 
 ```bash
 npm run db:migrate        # create the tables
+npm run db:seed           # fill the ten taxonomy lists
 npm run auth:create-owner # asks for a name, email and password
 ```
+
+`db:seed` puts the 389 starting values - statuses, platforms, fabrics, the 165
+sub-categories, the 122 tags - into the taxonomy tables. It only ever inserts what
+is missing, so running it again after you have edited a list on the Taxonomy page
+changes nothing. It prints what it inserted and what was already there.
 
 Sign in at http://localhost:3000, and you will be asked to set up an authenticator
 app straight away - two-factor is required for every account, including yours. Any
