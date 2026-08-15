@@ -40,20 +40,12 @@ npm run dev           # http://localhost:3000
 `git log` is the honest history — every commit message explains the reasoning behind
 that change, so `git log -p` on a feature is often faster than reading the files cold.
 
-**Two things to know before you trust `npm run verify`:**
-
-1. **The working tree is not clean, and that is deliberate.** The n8n intake work sits
-   on the branch `feature/n8n-lead-intake` (commit `679312d`, plus uncommitted follow-up
-   fixes from browser testing), unpushed, waiting on the owner. Do not discard it; read
-   `git status` before assuming any of it is scratch work.
-2. **Three tests in `src/features/analytics/range.test.ts` fail, and they are not
-   yours.** They fail identically on `e7aa54e`, before the intake work started.
-   `parseRange` takes an injectable `now` but line 93 reads the real clock via
-   `todayInBusinessTime()` while the range start uses the injected date, so the two
-   disagree by a day once the real date passes the date pinned in the test
-   (2026-08-14). One-line fix: `const today = businessDate(now);`. Harmless in
-   production, where `now` defaults to the real clock and both agree. Everything else
-   passes: typecheck, lint, format, and 580 other tests.
+**State of `npm run verify` as of this revision:** `main` is even with `origin/main`,
+the n8n intake branch is merged, the `range.test.ts` clock bug is fixed, and CI's Build
+step has the env vars it needs. Typecheck, lint, and all 594 tests pass. The one thing
+`verify` will flag that is not a project problem: `format:check` fails on files under
+the untracked `.agents/` and `VibeSec-Skill/` directories (Claude Code skill installs,
+not part of this codebase) — ignore those, they are not tracked by git.
 
 Migrations through `0006_cloudy_rhino` are applied.
 
@@ -61,24 +53,20 @@ Migrations through `0006_cloudy_rhino` are applied.
 
 Built, working, committed:
 
-| Area                  | State                                                                                                                |
-| --------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| Local dev environment | Docker PostgreSQL 17 + Redis 7, `npm run setup`, `npm run doctor`, wait-for-db, secret-scanning pre-commit hook      |
-| Configuration         | Zod-validated `@/lib/env`, `server-only`-guarded. Pino logger with redaction. `@/lib/time` for the Qatar timezone    |
-| Design system         | Theme tokens for `public`, `admin-dark`, `admin-light`; SSR theme switch with no flash; contrast asserted vs WCAG AA |
-| Auth                  | Better Auth, invite-only, TOTP two-factor, four roles, permission table in `@/lib/auth/roles`, activity log          |
-| Taxonomy              | Ten lists, 389 seeded values, full CRUD with reorder/retire/restore, one page serves all ten via a registry          |
-| Leads and customers   | Schema, list with filters, detail, edit, status changer, `customer_summary` view, E.164 phone identity               |
-| Spreadsheet import    | `/leads/import`: dry-run report per row, duplicate detection, no invented taxonomy values, safe to re-upload         |
-| Lead photos           | Upload, re-encode via sharp (EXIF stripped), thumbnails, `/lead-images/[id]/[variant]`, delete removes the file      |
-| Analytics             | Boards, not one dashboard. Demand board built with Chart.js; money, stock and orders declared as planned             |
-| Demo data             | `npm run db:demo` invents ~140 leads; `npm run db:demo -- clear` removes them                                        |
-
-Built and browser-verified, **on `feature/n8n-lead-intake`, unpushed**:
-
-| Area       | State                                                                                                                    |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------ |
-| n8n intake | `POST /n8n/intake` (bearer token or HMAC), staging table `lead_intake`, review queue at `/intake`. Setup: `LOCAL-DEV.md` |
+| Area                  | State                                                                                                                    |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Local dev environment | Docker PostgreSQL 17 + Redis 7, `npm run setup`, `npm run doctor`, wait-for-db, secret-scanning pre-commit hook          |
+| Configuration         | Zod-validated `@/lib/env`, `server-only`-guarded. Pino logger with redaction. `@/lib/time` for the Qatar timezone        |
+| Design system         | Theme tokens for `public`, `admin-dark`, `admin-light`; SSR theme switch with no flash; contrast asserted vs WCAG AA     |
+| Auth                  | Better Auth, invite-only, TOTP two-factor, four roles, permission table in `@/lib/auth/roles`, activity log              |
+| Taxonomy              | Ten lists, 389 seeded values, full CRUD with reorder/retire/restore, one page serves all ten via a registry              |
+| Leads and customers   | Schema, list with filters, detail, edit, status changer, `customer_summary` view, E.164 phone identity                   |
+| Spreadsheet import    | `/leads/import`: dry-run report per row, duplicate detection, no invented taxonomy values, safe to re-upload             |
+| Lead photos           | Upload, re-encode via sharp (EXIF stripped), thumbnails, `/lead-images/[id]/[variant]`, delete removes the file          |
+| Analytics             | Boards, not one dashboard. Demand board built with Chart.js; money, stock and orders declared as planned                 |
+| Demo data             | `npm run db:demo` invents ~140 leads; `npm run db:demo -- clear` removes them                                            |
+| n8n intake            | `POST /n8n/intake` (bearer token or HMAC), staging table `lead_intake`, review queue at `/intake`. Setup: `LOCAL-DEV.md` |
+| CI                    | `.github/workflows/ci.yml` Build step has the env vars `@/lib/env` needs at import time; was silently red before         |
 
 Not built yet:
 
@@ -97,7 +85,7 @@ Not built yet:
 
 In the order the owner and I agreed. He may reprioritise — ask if it is not obvious.
 
-### 1. n8n intake — built and working, awaiting review and a push
+### 1. n8n intake — done, merged to `main`
 
 Done: `POST /n8n/intake` (bearer token or HMAC signature, `crypto.timingSafeEqual`,
 five-minute replay window, idempotent on `externalId`), the `lead_intake` staging table,
@@ -297,20 +285,25 @@ Worth respecting; it came up explicitly.
 
 ## Where the last session stopped
 
-The final commit is `e7aa54e`, "Write the handover, so the next session starts
-informed" — this file's previous revision. `main` was even with `origin/main` at that
-point and stayed that way; nothing has been pushed since.
+The final commit is `72f4fff`, "Give the Build step the env vars it always needed."
+`main` is even with `origin/main` and the tree is clean (aside from untracked Claude
+Code skill-tooling directories that are not part of this codebase). `npm run verify`
+passes in full: typecheck, lint, format, and all 594 tests.
 
-The session after that one built the n8n intake feature described under "The plan from
-here" § 1: the schema, the endpoint, the review queue, and the `persist.ts` refactor the
-previous handover asked for. It lives on **`feature/n8n-lead-intake`** — commit
-`679312d` plus uncommitted fixes found while testing in the browser. Nothing is pushed
-and no PR is open.
+Everything that was on `feature/n8n-lead-intake` is now merged into `main` — the branch
+is gone, its work landed as ordinary commits: `679312d` (schema, endpoint, review queue,
+the `persist.ts` refactor), `16722e2` (bearer-token support plus the two review-page
+bugs found by browser testing), `b85d1fb` (the pre-existing `range.test.ts` clock bug,
+fixed on its own rather than folded into the intake commits), and `72f4fff` (CI's Build
+step was missing the env vars `@/lib/env` needs at import time — every push had been
+red at Build since Phase 0, not just this branch; `/n8n/intake` just made the gap
+visible for the first time on a PR).
 
-The owner ran a real n8n workflow against it from his own Docker n8n, and promote and
-dismiss were both driven through `/intake`, producing leads 289-291. The two bugs that
-walkthrough exposed are fixed and recorded under "Traps" — both were invisible to the
-type checker and to every test, which is the argument for the browser step.
+The owner ran a real n8n workflow against the intake endpoint from his own Docker n8n,
+and promote and dismiss were both driven through `/intake`, producing leads 289-291.
+The two bugs that walkthrough exposed are fixed and recorded under "Traps" — both were
+invisible to the type checker and to every test, which is the argument for the browser
+step.
 
 One design decision was reversed part-way and is worth not re-reversing: **the endpoint
 originally demanded an HMAC signature and now also accepts a plain bearer token.**
@@ -322,7 +315,6 @@ production story for a solo operator with one VPS. The signature path is still t
 still tested, and still wins when both credentials are sent. `CONCEPTS.md` states plainly
 what the token gives up and why it is acceptable for an internal-network-only endpoint.
 
-Three things are the owner's to decide, not yours to assume: whether this branch is
-pushed and merged as one change or split up; whether the pre-existing `range.test.ts`
-failure is fixed on this branch or its own; and whether brand assets or deployment comes
-next once it lands.
+What's left is the owner's to decide, not yours to assume: whether brand assets (§2) or
+deployment (§3) comes next now that the intake work has landed, and the browser
+walkthroughs under "Smaller pending items" that nobody has clicked through yet.
