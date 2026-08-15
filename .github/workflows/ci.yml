@@ -20,6 +20,28 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
+    # `@/lib/env` validates every required variable the moment it is imported, not
+    # lazily - see src/lib/env/index.ts for why. That makes these job-wide, not just
+    # the Test step's problem: Next has to import a Route Handler's module during
+    # `next build` to read its config (runtime, dynamic, ...), and doing that for
+    # /n8n/intake or /lead-images pulls @/lib/env in along the way. Build failed on
+    # every push before this route existed too - `next build` was never actually
+    # exempt, it just happened not to import anything reaching @/lib/env yet.
+    #
+    # The values are throwaway strings of the right shape, not credentials - there
+    # is nothing for them to open. DATABASE_URL points at a port with nothing behind
+    # it on purpose: the few tests that would use a database check whether one
+    # answers and skip when it does not, so this proves that path works rather than
+    # quietly bypassing it.
+    env:
+      APP_ENV: test
+      APP_URL: http://localhost:3000
+      BETTER_AUTH_URL: http://localhost:3000
+      DATABASE_URL: postgresql://ci:ci@127.0.0.1:1/ci_no_database
+      DISABLE_REDIS: "true"
+      BETTER_AUTH_SECRET: ci-only-not-a-real-secret-000000000000
+      N8N_WEBHOOK_SECRET: ci-only-not-a-real-secret-000000000000
+
     steps:
       - uses: actions/checkout@v5
         with:
@@ -46,25 +68,8 @@ jobs:
       - name: Check formatting
         run: npm run format:check
 
-      # The suite is unit tests, but several modules import the validated env
-      # singleton, which refuses to load if configuration is missing - so the
-      # runner needs a syntactically valid environment even though nothing here
-      # connects to anything. The secrets are throwaway values of the right shape,
-      # not credentials: there is nothing for them to open.
-      #
-      # DATABASE_URL points at a port with nothing behind it on purpose. The few
-      # tests that would use a database check whether one answers and skip when it
-      # does not, so this proves that path works rather than quietly bypassing it.
       - name: Test
         run: npm run test
-        env:
-          APP_ENV: test
-          APP_URL: http://localhost:3000
-          BETTER_AUTH_URL: http://localhost:3000
-          DATABASE_URL: postgresql://ci:ci@127.0.0.1:1/ci_no_database
-          DISABLE_REDIS: "true"
-          BETTER_AUTH_SECRET: ci-only-not-a-real-secret-000000000000
-          N8N_WEBHOOK_SECRET: ci-only-not-a-real-secret-000000000000
 
       # Dependency vulnerabilities in what actually ships.
       #
@@ -83,8 +88,6 @@ jobs:
       - name: Audit runtime dependencies
         run: npm audit --omit=dev --audit-level=high
 
-      # Proves the app compiles. No secrets are needed: configuration is
-      # validated at server startup in src/instrumentation.ts, not at build time,
-      # precisely so that CI does not require production credentials.
+      # Proves the app compiles.
       - name: Build
         run: npm run build
