@@ -1,0 +1,27 @@
+# Keep the build context small and never send local secrets or state to the
+# Docker daemon. Everything the image actually needs is copied explicitly in
+# the Dockerfile; this list is what stays out.
+
+node_modules
+.next
+.git
+.env*
+!.env.example
+
+storage
+coverage
+test-results
+playwright-report
+blob-report
+
+# Claude Code / editor tooling, not part of the app
+.claude
+.agents
+.vscode
+.idea
+
+# scratch working state from the brand-kit skill run
+brandkit
+reference/generated-raw
+
+*.log

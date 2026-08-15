@@ -1,0 +1,178 @@
+# Production stack for the Contabo VPS: app, PostgreSQL, Redis, a reverse
+# proxy, and a nightly backup. n8n is NOT here - the owner runs it separately
+# on the same VPS and reaches this app over the `ceyloncollection_internal`
+# network below, by container name, as docs/LOCAL-DEV.md's n8n section
+# describes.
+#
+# First deploy and day-to-day operation are in docs/DEPLOYMENT.md. Summary:
+#
+#   docker compose --env-file .env.production -f docker/compose.prod.yml \
+#     --profile tools run --rm migrate   # apply migrations
+#   docker compose --env-file .env.production -f docker/compose.prod.yml \
+#     up -d                              # start everything else
+#
+# Copy docker/.env.production.example to .env.production at the repo root
+# (git-ignored, never committed) and fill in real values first.
+
+name: ceyloncollection
+
+services:
+  app:
+    image: ${IMAGE_REPO:-ghcr.io/udithahashi/ceyloncollection}:${IMAGE_TAG:-latest}
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      target: runner
+    restart: unless-stopped
+    environment:
+      APP_ENV: production
+      APP_URL: ${APP_URL}
+      APP_TIMEZONE: ${APP_TIMEZONE:-Asia/Qatar}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-ceylon}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-ceyloncollection}
+      REDIS_URL: redis://:${REDIS_PASSWORD}@cache:6379
+      DISABLE_REDIS: "false"
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+      BETTER_AUTH_URL: ${APP_URL}
+      STORAGE_DRIVER: local
+      N8N_WEBHOOK_SECRET: ${N8N_WEBHOOK_SECRET}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      SENTRY_DSN: ${SENTRY_DSN:-}
+    volumes:
+      # A named volume, not a bind mount to a host path someone might forget to
+      # create - see the storage-volume trap in docs/HANDOVER.md. The Dockerfile
+      # pre-creates and chowns this path so a fresh volume inherits the right
+      # ownership instead of coming up root-owned.
+      - uploads:/app/storage/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+      cache:
+        condition: service_healthy
+    networks: [internal]
+    # No published port. The proxy service is the only public entrypoint;
+    # n8n and everything else reaches `app` by container name on `internal`.
+
+  # One-off migration runner, not part of the running stack - `--profile tools`
+  # keeps `docker compose up` from ever starting it by accident. Run it
+  # explicitly before every deploy that includes new migrations.
+  migrate:
+    image: ${IMAGE_REPO:-ghcr.io/udithahashi/ceyloncollection}:${IMAGE_TAG:-latest}-migrate
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      target: migrator
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-ceylon}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-ceyloncollection}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks: [internal]
+    profiles: ["tools"]
+
+  db:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-ceylon}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-ceyloncollection}
+      # Keep the database itself in UTC, same as local dev. The app converts
+      # to Asia/Qatar for display and for date grouping in reports.
+      TZ: UTC
+      PGTZ: UTC
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ceylon} -d ${POSTGRES_DB:-ceyloncollection}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks: [internal]
+    # No published port - only `app`, `migrate` and `backup` need to reach it,
+    # and all three are on the same internal network.
+
+  cache:
+    image: redis:8-alpine
+    restart: unless-stopped
+    command:
+      [
+        "redis-server",
+        "--appendonly",
+        "yes",
+        "--save",
+        "60",
+        "1",
+        "--requirepass",
+        "${REDIS_PASSWORD}",
+      ]
+    volumes:
+      - cache_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "--no-auth-warning", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks: [internal]
+
+  # Nightly pg_dump with bounded retention. Runs the same postgres:17 image as
+  # `db` so pg_dump's version always matches the server it is dumping - a
+  # version-mismatched pg_dump is a backup that only looks like it worked.
+  # docs/DEPLOYMENT.md has the restore drill; a backup nobody has restored is
+  # a hope, not a backup.
+  backup:
+    image: postgres:17
+    restart: unless-stopped
+    entrypoint: ["/bin/sh", "/scripts/backup-db.sh"]
+    environment:
+      PGHOST: db
+      PGUSER: ${POSTGRES_USER:-ceylon}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: ${POSTGRES_DB:-ceyloncollection}
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-14}
+      # A sleep-loop instead of a cron daemon: one process, no extra package to
+      # install in the image, no root cron confusion, and `docker logs` shows
+      # every run in order. Not appropriate for sub-minute schedules, which
+      # this - nightly - is nowhere near.
+      BACKUP_INTERVAL_SECONDS: ${BACKUP_INTERVAL_SECONDS:-86400}
+    volumes:
+      - ../scripts/backup-db.sh:/scripts/backup-db.sh:ro
+      - backups:/backups
+    depends_on:
+      db:
+        condition: service_healthy
+    networks: [internal]
+
+  proxy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    environment:
+      DOMAIN: ${DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL}
+    depends_on:
+      - app
+    networks: [internal]
+
+networks:
+  internal:
+    # Named explicitly, not left to the `ceyloncollection_` project-name
+    # prefix, so the owner's separately-managed n8n compose file has a fixed
+    # name to attach to (`networks: { ceyloncollection_internal: { external:
+    # true } }`) regardless of what this project is called.
+    name: ceyloncollection_internal
+
+volumes:
+  db_data:
+  cache_data:
+  uploads:
+  backups:
+  caddy_data:
+  caddy_config:

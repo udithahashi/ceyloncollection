@@ -19,8 +19,9 @@ them that way — it is a deliberate house style, not decoration.
 | 2     | This file                                     | State, plan, traps, and where the last session stopped    |
 | 3     | [docs/CONCEPTS.md](CONCEPTS.md)               | The architecture and the reasoning behind every choice    |
 | 4     | [docs/LOCAL-DEV.md](LOCAL-DEV.md)             | Day-to-day commands                                       |
-| 5     | [docs/TROUBLESHOOTING.md](TROUBLESHOOTING.md) | When something breaks                                     |
-| 6     | [docs/GLOSSARY.md](GLOSSARY.md)               | Any term you or the owner does not recognise              |
+| 5     | [docs/DEPLOYMENT.md](DEPLOYMENT.md)           | The production stack, deploys, backups, the restore drill |
+| 6     | [docs/TROUBLESHOOTING.md](TROUBLESHOOTING.md) | When something breaks                                     |
+| 7     | [docs/GLOSSARY.md](GLOSSARY.md)               | Any term you or the owner does not recognise              |
 
 `CLAUDE.md` simply points at `AGENTS.md`, so both Claude Code and Cursor read the same
 rules. There is no second source of truth to keep in step.
@@ -67,6 +68,7 @@ Built, working, committed:
 | Demo data             | `npm run db:demo` invents ~140 leads; `npm run db:demo -- clear` removes them                                            |
 | n8n intake            | `POST /n8n/intake` (bearer token or HMAC), staging table `lead_intake`, review queue at `/intake`. Setup: `LOCAL-DEV.md` |
 | CI                    | `.github/workflows/ci.yml` Build step has the env vars `@/lib/env` needs at import time; was silently red before         |
+| Deployment            | `Dockerfile`, `docker/compose.prod.yml`, GHCR publish in CI, nightly backup + restore drill. See `docs/DEPLOYMENT.md`    |
 
 Not built yet:
 
@@ -75,8 +77,6 @@ Not built yet:
 - **Brand assets.** No real logo — the owner has hired a human designer for it, so this
   is no longer an AI-generation task; see §2. `src/app/icon.tsx` is a coded placeholder
   favicon, not a designed asset. No empty-state illustrations yet either.
-- **Deployment.** No `Dockerfile`, no `docker/compose.prod.yml`, no backup script. CI
-  (`.github/workflows/ci.yml`) runs verify on push, and nothing publishes an image yet.
 - **Activity log UI.** Rows are written faithfully; no page reads them. The permission
   (`activityLog:read`) already exists.
 - **Money, stock, orders.** Declared in `src/features/analytics/boards.ts` and shown as
@@ -147,20 +147,55 @@ category) still go through Higgsfield, or wait for the same designer. Ask before
 generating any more image assets for this project — don't assume the door that closed
 for the logo is open or shut for illustrations.
 
-### 3. Deployment to the Contabo VPS
+### 3. Deployment to the Contabo VPS — scaffolded, not yet run for real
 
-Multi-stage `Dockerfile` (the build already uses `output: 'standalone'`),
-`docker/compose.prod.yml` with app, PostgreSQL, Redis and a reverse proxy, GitHub Actions
-publishing to GHCR, `nightly pg_dump` with retention, and a documented restore drill — a
-backup nobody has restored is a hope, not a backup.
+Everything code/config can carry is done and verified locally: multi-stage `Dockerfile`
+(a `runner` target for the app, a `migrator` target that reuses the builder stage's full
+`node_modules` rather than hand-picking a partial one - see the file's own comment),
+`docker/compose.prod.yml` (app, PostgreSQL, Redis, Caddy as the reverse proxy, a nightly
+backup), the `publish` job in `.github/workflows/ci.yml` pushing both images to GHCR on
+every green push to `main`, `scripts/backup-db.sh`, and the restore drill - all written
+up in the new `docs/DEPLOYMENT.md`.
 
-Two specifics that will bite otherwise:
+**Actually verified, not just written:** built both Dockerfile targets locally, confirmed
+`sharp`'s Linux binary is present in the `runner` image, ran the container and got `200`
+from `/login` and `/icon` with the healthcheck reporting `healthy`, confirmed it runs as
+the non-root `nextjs` user, and ran the `migrator` image against the real dev database -
+it connected and correctly reported "Nothing to apply; already up to date." Separately
+ran `scripts/backup-db.sh` against the dev database, then verified the resulting `.dump`
+with `pg_restore --list` (163 TOC entries) - the backup script has produced one real,
+inspected-valid dump; the restore drill in `docs/DEPLOYMENT.md` is written but has not
+yet been run end-to-end into a throwaway container.
 
-- **`sharp` is a native module.** It was installed on Windows; the Linux container needs
-  its own binaries. Build inside the image rather than copying `node_modules` in.
-- **`STORAGE_LOCAL_DIR` must be a mounted volume.** Lead photos live on disk, so without
-  a volume every deploy silently discards them. `npm run doctor` checks this directory is
-  writable; a volume mounted as root will fail there, which is the intended warning.
+**What's still the owner's to do, because it needs the real VPS:** provision the
+Contabo box, point DNS at it, create a GHCR access token, copy
+`docker/.env.production.example` to `.env.production` with real secrets, and walk
+through `docs/DEPLOYMENT.md`'s "First deploy" section for real. Nobody has run the
+restore drill against production data yet either - do that once the first real backup
+exists.
+
+Two specifics that already bit once and are now handled, documented here so nobody
+"fixes" them back into a trap:
+
+- **`sharp` is a native module.** The Dockerfile never copies a host `node_modules` in -
+  every stage that installs dependencies runs `npm ci` inside the Linux build. On top of
+  that, `next.config.ts` now sets `outputFileTracingIncludes` for `sharp` explicitly,
+  because Next's own docs list sharp as the example of a native module the standalone
+  tracer can miss even when the build otherwise looks fine.
+- **`STORAGE_LOCAL_DIR` must be a mounted volume.** `docker/compose.prod.yml` mounts it
+  as the named volume `uploads`, never a host bind path someone forgot to create. The
+  Dockerfile creates and `chown`s that directory to the non-root `nextjs` user before
+  the volume exists, because Docker seeds a fresh named volume's ownership from
+  whatever the image already has there - skip that step and the volume comes up
+  root-owned, which is exactly the failure `npm run doctor`'s writability check is
+  there to catch.
+
+One more, new in this pass: `tsx` and `dotenv` moved from `devDependencies` to
+`dependencies` in `package.json`. The `migrator` image needs them at container-run
+time to execute `scripts/migrate.mts` in production, not just during local `npm run
+db:migrate` - `npm run typecheck`/`lint`/`test`/`build` don't care which list a package
+is in, so this only shows up if someone "cleans up" the dependency list without reading
+why first.
 
 ### 4. Money, stock and orders
 

@@ -1,0 +1,24 @@
+# Caddy handles TLS itself - it requests and renews a Let's Encrypt
+# certificate for $DOMAIN automatically, which is the whole reason this is
+# Caddy and not nginx: a solo operator with one VPS should not also be
+# operating a certbot renewal cron.
+
+{
+	email {$ACME_EMAIL}
+}
+
+{$DOMAIN} {
+	# n8n reaches the app directly over the internal Docker network
+	# (http://app:3000/n8n/intake, see docs/LOCAL-DEV.md) and must never be
+	# reachable from the public internet. This block has to come before the
+	# catch-all `handle` below, or Caddy would proxy it like everything else.
+	handle /n8n/* {
+		respond 404
+	}
+
+	handle {
+		reverse_proxy app:3000
+	}
+
+	encode gzip
+}

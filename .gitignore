@@ -31,9 +31,11 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # env files - never commit real secrets.
-# .env.example is committed on purpose so required variables are documented.
+# .env.example and docker/.env.production.example are committed on purpose so
+# required variables are documented; both must only ever contain placeholders.
 .env*
 !.env.example
+!docker/.env.production.example
 
 # vercel
 .vercel

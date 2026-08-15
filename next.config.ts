@@ -52,6 +52,15 @@ const nextConfig: NextConfig = {
   // module, and bundling it breaks the .node binary lookup.
   serverExternalPackages: ['pino', 'pino-pretty', 'sharp'],
 
+  // The `output: 'standalone'` file tracer sometimes misses a native module's
+  // platform-specific .node binaries, and sharp is Next's own documented example of
+  // this. Without this, the production Docker image can build and boot successfully
+  // and still 500 the moment a photo is uploaded, because the traced output looks
+  // complete but the binary sharp actually loads at runtime is missing.
+  outputFileTracingIncludes: {
+    '/*': ['node_modules/sharp/**/*'],
+  },
+
   experimental: {
     serverActions: {
       /**

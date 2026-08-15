@@ -117,7 +117,10 @@ function checkFileNames(files) {
   for (const file of files) {
     const base = file.split('/').pop() ?? file;
     const isEnvFile = base === '.env' || base.startsWith('.env.');
-    if (isEnvFile && base !== '.env.example') {
+    // Any name ending `.example` is a documented placeholder template, the same
+    // exception `.env.example` itself gets - see docker/.env.production.example,
+    // which needs its own file because it configures Compose, not the app.
+    if (isEnvFile && !base.endsWith('.example')) {
       findings.push({
         file,
         line: null,
