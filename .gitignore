@@ -54,6 +54,9 @@ next-env.d.ts
 # generated brand assets are committed, but raw Higgsfield downloads are not
 /reference/generated-raw
 
+# brand-kit skill working state and draft generations - never final assets
+/brandkit
+
 # local tooling
 .idea
 .vscode/*

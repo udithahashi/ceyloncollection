@@ -72,8 +72,9 @@ Not built yet:
 
 - **The public website.** Nothing exists under a `(public)` route group. The brand design
   system is ready for it; the reference design is `reference/public-website.html`.
-- **Brand assets.** No monogram, no favicons, no empty-state illustrations. `BrandMark`
-  is currently type only.
+- **Brand assets.** No real logo — the owner has hired a human designer for it, so this
+  is no longer an AI-generation task; see §2. `src/app/icon.tsx` is a coded placeholder
+  favicon, not a designed asset. No empty-state illustrations yet either.
 - **Deployment.** No `Dockerfile`, no `docker/compose.prod.yml`, no backup script. CI
   (`.github/workflows/ci.yml`) runs verify on push, and nothing publishes an image yet.
 - **Activity log UI.** Rows are written faithfully; no page reads them. The permission
@@ -124,16 +125,27 @@ because both were invisible to the type checker and to every test:
   page's own `notFound()` fired on success. The page now renders an outcome panel for an
   already-reviewed row and reserves 404 for a row that does not exist.
 
-### 2. Brand assets (needs the owner)
+### 2. Brand assets — logo is now a human designer's job, not AI's
 
-The owner asked for images to be generated with **Higgsfield**: GPT Image for icon-like
-work, Nano Banana Pro for anything photographic. His standing instruction is explicit:
-**if the Higgsfield plugin or login fails, stop and tell him — do not substitute another
-tool and do not hand-roll an SVG instead.**
+**Reversed since the previous revision of this file.** A brand-kit session generated
+three Recraft SVG logo candidates (monogram, folded-cloth pictorial, measured-gap
+abstract) and the owner rejected the whole direction: **he has hired a human designer
+for the actual logo. Do not generate logo marks with AI for this project again** — ask
+if this is ever unclear rather than assuming it has changed back.
 
-Wanted: a monogram for `BrandMark`, favicons and app icons, and a small set of
-empty-state illustrations. Raw downloads belong in `reference/generated-raw`, which is
-gitignored; committed assets go in `public/`.
+What's in place instead: `src/app/icon.tsx` is a **placeholder favicon**, built with
+code (`next/og`'s `ImageResponse`), not image generation — navy background, "CC" in gold,
+using the same `brand` tokens as everything else. It exists so the browser tab isn't the
+generic Next.js icon while the real logo is pending. Delete it the moment the designer
+delivers a real mark; a static `icon.png` or `favicon.ico` in `src/app/` takes over
+automatically, no code change needed elsewhere. `BrandMark`
+(`src/components/layout/brand-mark.tsx`) is unaffected — it was already text, not an
+AI-generated asset, and stays that way until the designer's mark exists to reference.
+
+**Not yet decided:** whether empty-state illustrations (a separate, non-logo asset
+category) still go through Higgsfield, or wait for the same designer. Ask before
+generating any more image assets for this project — don't assume the door that closed
+for the logo is open or shut for illustrations.
 
 ### 3. Deployment to the Contabo VPS
 
