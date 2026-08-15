@@ -23,12 +23,12 @@ import { z } from 'zod';
 
 import {
   APP_TIMEZONE,
+  businessDate,
   calendarDaysAgo,
   daysBetween,
   endOfCalendarDay,
   shiftCalendarDay,
   startOfCalendarDay,
-  todayInBusinessTime,
 } from '@/lib/time';
 
 import { DEFAULT_PRESET, rangePresetKeys, rangePresets, type RangePreset } from './presets';
@@ -90,7 +90,11 @@ export function parseRange(raw: RawSearchParams, now: Date = new Date()): DateRa
   const parsed = rangeSchema.safeParse(flat);
   const input = parsed.success ? parsed.data : rangeSchema.parse({});
 
-  const today = todayInBusinessTime();
+  // Derived from `now`, not read from the real clock: `now` is what makes this function
+  // testable, and computing "today" from a different clock than the rest of the
+  // function silently drifted the range's length by a day once a test's fixed `now`
+  // fell in the past. See range.test.ts.
+  const today = businessDate(now);
 
   // Custom wins only if it carries at least one date. A `?range=custom` with no dates
   // is what a half-submitted form produces, and it should read as the default rather
