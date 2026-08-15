@@ -15,10 +15,8 @@
  * `LeadForm` does, because the next thing to do is look at the next queued message, not
  * type the same customer in twice.
  */
-import Link from 'next/link';
 import { useActionState } from 'react';
 
-import { buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TextareaField } from '@/components/ui/field';
 import { SubmitButton } from '@/components/ui/submit-button';
@@ -58,36 +56,17 @@ export function IntakeReviewForm({
   const [rejectState, rejectAction] = useActionState(rejectIntakeAction, idleActionState);
 
   const fieldErrors = promoteState.ok ? {} : (promoteState.fieldErrors ?? {});
-  const saved = promoteState.ok && promoteState.data !== undefined ? promoteState.data : null;
-  const rejected = rejectState.ok;
 
-  if (saved !== null || rejected) {
-    return (
-      <Card className="max-w-4xl">
-        <CardContent className="py-8">
-          <div className="flex flex-col items-start gap-3">
-            <p className="text-sm text-ink-primary">
-              {saved !== null ? (
-                <>
-                  Saved as lead {saved.reference}.{' '}
-                  <Link href={`/leads/${saved.reference}`} className="underline">
-                    Open it
-                  </Link>
-                  .
-                </>
-              ) : (
-                'Dismissed. Nothing was recorded.'
-              )}
-            </p>
-
-            <Link href="/intake" className={buttonVariants({ variant: 'secondary' })}>
-              Back to the queue
-            </Link>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  /*
+   * Only failures are rendered here. On success the staged row stops being `pending`,
+   * so the Server Action's re-render of this route replaces this whole component with
+   * the outcome panel on the page itself - which can say "lead 289" with a link,
+   * survives a refresh, and is also what a colleague sees if they had the same message
+   * open. Repeating that here would be a second implementation of it that only ever
+   * showed for a fraction of a second.
+   */
+  const promoteFailure = promoteState.ok ? null : promoteState;
+  const rejectFailure = rejectState.ok ? null : rejectState;
 
   return (
     <div className="flex flex-col gap-6">
@@ -140,9 +119,9 @@ export function IntakeReviewForm({
               fieldErrors={fieldErrors}
             />
 
-            {!promoteState.ok ? (
+            {promoteFailure !== null ? (
               <p role="alert" className="text-sm text-error-ink">
-                {promoteState.error}
+                {promoteFailure.error}
               </p>
             ) : null}
 
@@ -168,12 +147,12 @@ export function IntakeReviewForm({
               rows={2}
               maxLength={300}
               hint="Spam, a wrong number, a question that is not an enquiry - whatever it was."
-              error={rejectState.fieldErrors?.reason?.[0]}
+              error={rejectFailure?.fieldErrors?.reason?.[0]}
             />
 
-            {rejectState.error ? (
+            {rejectFailure !== null ? (
               <p role="alert" className="text-sm text-error-ink">
-                {rejectState.error}
+                {rejectFailure.error}
               </p>
             ) : null}
 

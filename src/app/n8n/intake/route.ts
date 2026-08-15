@@ -5,8 +5,13 @@
  * one with no session at all: n8n is not a person who signs in, so the shared secret in
  * N8N_WEBHOOK_SECRET (verified in @/lib/webhook-signature) is the whole of who-are-you.
  * In production this is reachable only on the internal Docker network - nginx does not
- * forward it from the public internet - and the signature and rate limit here are
+ * forward it from the public internet - and the credential check and rate limit here are
  * defence in depth for that boundary, not a substitute for it.
+ *
+ * Two credentials are accepted: a plain `Authorization: Bearer <secret>`, which n8n
+ * sends natively from a Header Auth credential with no scripting at all, or the stronger
+ * HMAC signature. @/lib/webhook-signature explains the trade between them and why both
+ * are here rather than only the stronger one.
  *
  * Everything this route writes is a guess: see src/db/schema/lead-intake.ts for why it
  * lands in a staging table rather than in `leads`, and /intake for where a human turns
@@ -22,7 +27,7 @@ import { logActivity } from '@/lib/activity';
 import { env } from '@/lib/env';
 import { createLogger } from '@/lib/logger';
 import { checkRateLimit } from '@/lib/rate-limit';
-import { verifyWebhookSignature } from '@/lib/webhook-signature';
+import { verifyWebhookRequest } from '@/lib/webhook-signature';
 
 const log = createLogger('n8n-intake');
 
@@ -42,16 +47,17 @@ export async function POST(request: Request) {
   // sign something n8n never actually sent.
   const rawBody = await request.text();
 
-  const verification = verifyWebhookSignature(
+  const auth = verifyWebhookRequest({
     rawBody,
-    request.headers.get('x-timestamp'),
-    request.headers.get('x-signature'),
-    env.N8N_WEBHOOK_SECRET
-  );
+    authorization: request.headers.get('authorization'),
+    timestamp: request.headers.get('x-timestamp'),
+    signature: request.headers.get('x-signature'),
+    secret: env.N8N_WEBHOOK_SECRET,
+  });
 
-  if (!verification.ok) {
-    log.warn({ reason: verification.reason }, 'n8n intake: rejected');
-    return NextResponse.json({ error: 'Invalid signature.' }, { status: 401 });
+  if (!auth.ok) {
+    log.warn({ reason: auth.reason }, 'n8n intake: rejected');
+    return NextResponse.json({ error: 'Not authorised.' }, { status: 401 });
   }
 
   const decision = await checkRateLimit('webhookIntake', SIGNING_IDENTITY);
@@ -125,8 +131,13 @@ export async function POST(request: Request) {
     actor: null,
     entityType: 'leadIntake',
     entityId: row.id,
-    // Never the phone number itself here - see AGENTS.md rule 8.
-    metadata: { platform: payload.platform ?? null, hasPhone: payload.phone !== undefined },
+    // Never the phone number itself here - see AGENTS.md rule 8. `authMethod` is worth
+    // recording: it is how you notice a caller silently downgraded from signing.
+    metadata: {
+      platform: payload.platform ?? null,
+      hasPhone: payload.phone !== undefined,
+      authMethod: auth.method,
+    },
   });
 
   return NextResponse.json({ id: row.id, status: 'pending' }, { status: 201 });

@@ -138,6 +138,56 @@ and it will also check the invitation page renders.
 The output is a list of `ok` lines and a final count. Anything marked `FAIL` is a real
 finding, not a flaky test.
 
+## The n8n intake
+
+Enquiries arrive as social media messages; n8n forwards them to `POST /n8n/intake`,
+where they land in a staging table and wait for a person at `/intake`. Nothing becomes
+a lead without someone confirming it. `docs/CONCEPTS.md` explains why; this is how to
+run it.
+
+### Sending a test message without n8n
+
+```bash
+npm run intake:simulate -- "Do you have batik frocks in size L?"
+```
+
+Signs and posts one message using `N8N_WEBHOOK_SECRET` from `.env.local`. Expect
+`201 {"id":"...","status":"pending"}`, then open `/intake` and the message is waiting.
+Use this before blaming n8n for anything - it isolates the endpoint from the workflow.
+
+### Pointing n8n at it
+
+**Authentication is a shared secret**, `N8N_WEBHOOK_SECRET`. There is no username or
+password and no session; n8n is not a person who signs in.
+
+1. In n8n: **Credentials → Add credential → Header Auth**.
+   - Name: `Authorization`
+   - Value: `Bearer <the value of N8N_WEBHOOK_SECRET from .env.local>`
+2. Import `docs/n8n-intake-workflow.json` (**Workflow menu → Import from File**). Two
+   nodes: a manual trigger and an HTTP Request.
+3. On the HTTP Request node, select the credential from step 1.
+4. **Execute workflow.** Expect `201`, then check `/intake`.
+
+The URL differs by where n8n runs:
+
+| n8n is                     | URL                                           |
+| -------------------------- | --------------------------------------------- |
+| in Docker, app on host     | `http://host.docker.internal:3000/n8n/intake` |
+| on the same VPS as the app | `http://<app-container-name>:3000/n8n/intake` |
+
+`host.docker.internal` is how a container reaches the machine hosting it. A container
+that calls `localhost` is calling _itself_, which is the first thing to check when
+nothing arrives.
+
+### Production
+
+Nothing extra. Create the same Header Auth credential in the production n8n, set
+`N8N_WEBHOOK_SECRET` in the app's environment to the same value, and point the URL at
+the app over the internal Docker network. No container rebuild and no custom flags -
+that is the whole reason the endpoint accepts a bearer token and not only a signature.
+
+Keep the endpoint off the public internet: the reverse proxy must not forward `/n8n/*`.
+
 ## Git hooks
 
 Installed automatically by `npm install`.

@@ -2,7 +2,10 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ChevronLeft } from 'lucide-react';
 
+import { buttonVariants } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/page-header';
+import type { LeadIntakeRow } from '@/db/schema';
 import type { LeadFormSeed } from '@/features/leads/components/lead-form';
 import { IntakeReviewForm } from '@/features/leads/intake/components/intake-review-form';
 import { getIntakeById } from '@/features/leads/intake/queries';
@@ -29,15 +32,27 @@ export default async function ReviewIntakePage({ params }: PageProps<'/intake/[i
 
   const { id } = await params;
 
-  const [row, options, statusId] = await Promise.all([
+  const [detail, options, statusId] = await Promise.all([
     getIntakeById(id),
     leadFormOptions(),
     defaultStatusId(),
   ]);
 
-  // Gone, or already reviewed by someone else since the queue page was loaded - either
-  // way there is nothing left to do here.
-  if (!row || row.status !== 'pending') notFound();
+  // No such message. A 404 is the honest answer only for this case.
+  if (!detail) notFound();
+
+  const { row, promotedLeadReference } = detail;
+
+  /*
+   * Already dealt with. This is the ordinary path immediately after promoting one: a
+   * Server Action re-renders the route it was called from, and by then the row is no
+   * longer `pending`. 404ing here made a successful save look like a broken link, and
+   * hid the lead reference the person had just earned. It is also what a colleague sees
+   * when they open a message someone else has just handled.
+   */
+  if (row.status !== 'pending') {
+    return <IntakeOutcome row={row} promotedLeadReference={promotedLeadReference} />;
+  }
 
   const guessedPlatformId =
     row.platformRaw !== null
@@ -104,6 +119,69 @@ export default async function ReviewIntakePage({ params }: PageProps<'/intake/[i
         options={options}
         today={todayInBusinessTime()}
       />
+    </>
+  );
+}
+
+/** What a message that has already been promoted or dismissed shows instead of the form. */
+function IntakeOutcome({
+  row,
+  promotedLeadReference,
+}: {
+  row: LeadIntakeRow;
+  promotedLeadReference: number | null;
+}) {
+  const promoted = row.status === 'promoted';
+
+  return (
+    <>
+      <div className="flex flex-col gap-1">
+        <Link
+          href="/intake"
+          className="focus-visible:ring-action-ring -ml-1 inline-flex w-fit items-center gap-1 rounded-control px-1 text-xs text-ink-secondary transition-colors hover:text-ink-primary focus-visible:ring-2 focus-visible:outline-none"
+        >
+          <ChevronLeft aria-hidden="true" className="size-3.5" />
+          Intake queue
+        </Link>
+
+        <PageHeader
+          eyebrow="Demand"
+          title={promoted ? 'Recorded' : 'Dismissed'}
+          description={
+            promoted
+              ? 'This message has been recorded as a lead.'
+              : 'This message was dismissed, so nothing was recorded.'
+          }
+        />
+      </div>
+
+      <Card className="max-w-4xl">
+        <CardContent className="flex flex-col items-start gap-4 py-6">
+          <p className="text-sm whitespace-pre-wrap text-ink-secondary">{row.messageText}</p>
+
+          {row.rejectionReason !== null ? (
+            <p className="text-sm text-ink-primary">
+              <span className="text-ink-secondary">Reason: </span>
+              {row.rejectionReason}
+            </p>
+          ) : null}
+
+          <div className="flex flex-wrap items-center gap-3">
+            {promoted && promotedLeadReference !== null ? (
+              <Link
+                href={`/leads/${promotedLeadReference}`}
+                className={buttonVariants({ variant: 'primary' })}
+              >
+                Open lead {promotedLeadReference}
+              </Link>
+            ) : null}
+
+            <Link href="/intake" className={buttonVariants({ variant: 'secondary' })}>
+              Back to the queue
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
     </>
   );
 }

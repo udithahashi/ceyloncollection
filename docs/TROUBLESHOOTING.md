@@ -166,6 +166,72 @@ missing part is surfacing the error in the UI.
 
 ---
 
+## The n8n intake
+
+Every one of these cost real time on the day the endpoint was built. The server log is
+the fastest way in: each refusal writes one line naming the `reason`.
+
+```
+{"subsystem":"n8n-intake","reason":"badSignature","msg":"n8n intake: rejected"}
+```
+
+| `reason`         | What it means                                                        |
+| ---------------- | -------------------------------------------------------------------- |
+| `noCredentials`  | No `Authorization` header and no signature headers. Nothing to check |
+| `badToken`       | The bearer token does not equal `N8N_WEBHOOK_SECRET`                 |
+| `missingHeaders` | One signature header present, the other absent                       |
+| `stale`          | Timestamp more than five minutes out - clock drift, or a replay      |
+| `badSignature`   | The HMAC does not match the body and timestamp received              |
+
+### Nothing reaches the endpoint at all, or the response is a login page
+
+`src/proxy.ts` redirects anything without a session cookie to `/login`, and n8n has no
+cookie. `/n8n/*` is exempted via `SELF_AUTHENTICATING_PREFIXES` for exactly this
+reason. **Any new non-session endpoint needs an entry there**, or it silently never
+receives a request - and the symptom is a `200` full of login HTML, which looks like
+anything except a routing problem.
+
+### The container cannot reach the app
+
+A container calling `localhost` is calling _itself_. From n8n in Docker to an app on
+the host, use `http://host.docker.internal:3000`. See the table in `LOCAL-DEV.md`.
+
+### `badSignature`, and the request body looks right
+
+Check what actually arrived, not what you meant to send. n8n's HTTP Request node with
+**Body Content Type: Raw** and **Raw Content Type: `application/json`** runs the body
+through its own JSON encoder, so a string that is already JSON arrives wrapped in a
+second layer of quotes - `"test"` instead of `test`. The HMAC then covers different
+bytes than were signed. Set **Raw Content Type to `text/plain`** and set the real
+`Content-Type: application/json` as an ordinary header instead.
+
+Prefer the bearer token, which has none of this fragility.
+
+### `Module 'crypto' is disallowed` in an n8n Code node
+
+n8n's sandbox blocks Node built-ins unless the container sets
+`NODE_FUNCTION_ALLOW_BUILTIN=crypto`. **Do not hand-roll HMAC or SHA-256 to get around
+this** - use the bearer token instead, which needs no code at all. Never paste the
+secret into a workflow either: workflows get exported, and the export carries it in
+plain text.
+
+### An n8n expression is stored as literal text
+
+In an Edit Fields node, the **Name** box must stay `Fixed` and only the **Value** box
+becomes an `Expression`. Toggling the Name box prefixes it with `=`, so the field is
+literally called `=body`, and every later `$json.body` silently reads `undefined` -
+which still hashes to a plausible-looking signature. A Code node avoids the whole
+class of problem.
+
+### A message arrived but no lead appeared
+
+That is the design, not a fault. Messages land in `lead_intake` as `pending` and
+become leads only when someone promotes one at **`/intake`** - not `/leads`. See
+`CONCEPTS.md`, "Automated intake from n8n", for why guesses are never written straight
+into the table the demand charts read.
+
+---
+
 ## Tooling
 
 ### The commit was blocked by the secret scan

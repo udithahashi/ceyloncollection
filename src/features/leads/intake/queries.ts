@@ -6,7 +6,7 @@
 import { asc, eq, sql } from 'drizzle-orm';
 
 import { db } from '@/db/client';
-import { leadIntake, type LeadIntakeRow } from '@/db/schema';
+import { leadIntake, leads, type LeadIntakeRow } from '@/db/schema';
 
 const PAGE_SIZE = 25;
 
@@ -65,10 +65,27 @@ export async function listPendingIntake(page: number): Promise<IntakeQueuePage> 
   };
 }
 
-/** One staged row, whatever its status - the review page decides what to do with a row
- * that has already been promoted or rejected since the queue was last loaded. */
-export async function getIntakeById(id: string): Promise<LeadIntakeRow | null> {
-  const [row] = await db.select().from(leadIntake).where(eq(leadIntake.id, id)).limit(1);
+/**
+ * One staged row, whatever its status.
+ *
+ * Deliberately not filtered to `pending`. The review page has to be able to tell "no
+ * such message" from "already dealt with", because the second is the ordinary outcome
+ * of promoting one - and of a colleague getting to it first - and answering both with a
+ * 404 makes a successful save look like a broken link.
+ */
+export interface IntakeDetail {
+  row: LeadIntakeRow;
+  /** The lead it became, when it was promoted. Null otherwise. */
+  promotedLeadReference: number | null;
+}
 
-  return row ?? null;
+export async function getIntakeById(id: string): Promise<IntakeDetail | null> {
+  const [found] = await db
+    .select({ row: leadIntake, promotedLeadReference: leads.reference })
+    .from(leadIntake)
+    .leftJoin(leads, eq(leads.id, leadIntake.promotedLeadId))
+    .where(eq(leadIntake.id, id))
+    .limit(1);
+
+  return found ?? null;
 }

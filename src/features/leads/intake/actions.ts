@@ -131,11 +131,24 @@ export async function promoteIntakeAction(
   });
 }
 
+/**
+ * What a dismissal hands back.
+ *
+ * It carries a value rather than `undefined` for a specific reason: `idleActionState` is
+ * `{ ok: true, data: undefined }`, so a form that asks only "is this result ok?" reads
+ * "yes" before anything has been submitted. Returning data is what lets the review form
+ * tell "not submitted yet" apart from "dismissed" - see the note in
+ * ./components/intake-review-form.
+ */
+export interface DismissedIntake {
+  intakeId: string;
+}
+
 /** Dismisses a staged row without creating a lead. */
 export async function rejectIntakeAction(
-  _previous: ActionResult<undefined>,
+  _previous: ActionResult<DismissedIntake | undefined>,
   formData: FormData
-): Promise<ActionResult<undefined>> {
+): Promise<ActionResult<DismissedIntake | undefined>> {
   return runAction('lead.intake.reject', async () => {
     const user = await authorize('imports', 'update');
 
@@ -170,6 +183,6 @@ export async function rejectIntakeAction(
 
     revalidatePath('/intake');
 
-    return ok(undefined);
+    return ok({ intakeId });
   });
 }

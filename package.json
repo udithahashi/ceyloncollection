@@ -28,6 +28,7 @@
     "auth:create-owner": "tsx --conditions=react-server scripts/create-owner.mts",
     "auth:probe": "tsx --conditions=react-server scripts/auth-probe.mts",
     "auth:schema-check": "better-auth generate --config src/lib/auth/index.ts --output .next/auth-schema-check.ts -y",
+    "intake:simulate": "tsx --conditions=react-server scripts/simulate-intake.mts",
     "typecheck": "next typegen && tsc --noEmit",
     "lint": "eslint",
     "lint:fix": "eslint --fix",

@@ -480,25 +480,44 @@ the request is genuine is a shared secret, `N8N_WEBHOOK_SECRET`, used to HMAC-si
 production the endpoint is also unreachable except on the internal Docker network - the
 signature is defence in depth for that boundary, not a substitute for it.
 
-**The contract**, for wiring an n8n HTTP Request node at it:
+**The contract.** `POST` a JSON body to `/n8n/intake`, carrying one of two credentials.
 
-- `POST` a JSON body to `/n8n/intake`.
-- `X-Timestamp`: milliseconds since the epoch, as a string.
-- `X-Signature`: hex-encoded `HMAC-SHA256(N8N_WEBHOOK_SECRET, "${timestamp}.${rawBody}")` -
-  the timestamp and the exact request body, joined with a dot, then signed. Signing the
-  timestamp alongside the body is what stops a captured request being replayed later with
-  a fresh timestamp stapled on.
-- A request more than five minutes old (either direction - clocks drift) is rejected,
-  same as a bad signature: `401`.
-- Body fields: `message` (required, the enquiry itself); `phone`, `platform`, `name`
-  (optional free text - whatever n8n actually knows); `externalId` (optional, n8n's own
-  id for the message); `receivedAt` (optional ISO timestamp, for a backfilled or replayed
-  message where "now" would be wrong).
-- A retried delivery with the same `externalId` is answered `201` with the row it already
-  made, not a second row - so a lost response does not double an enquiry into the queue.
+_The simple one, and the one to use._ An `Authorization: Bearer <N8N_WEBHOOK_SECRET>`
+header. In n8n that is a **Header Auth** credential - `Name: Authorization`,
+`Value: Bearer <the secret>` - selected on the HTTP Request node. No Code node, no
+scripting, and the secret lives encrypted in n8n's own database instead of inside a
+workflow that gets exported and mailed around. `docs/n8n-intake-workflow.json` is a
+two-node workflow you can import that does exactly this.
+
+_The stronger one, for when the request crosses a network you do not control._ Two
+headers instead: `X-Timestamp` (milliseconds since the epoch) and `X-Signature`
+(hex-encoded `HMAC-SHA256(secret, "${timestamp}.${rawBody}")` - the timestamp and the
+exact bytes of the body, joined with a dot). Signing the timestamp alongside the body is
+what stops a captured request being replayed later with a fresh timestamp stapled on;
+anything more than five minutes old in either direction is refused. If both credentials
+arrive, the signature is the one checked, so a caller that goes to the trouble of signing
+is never quietly downgraded.
+
+Requiring the signature everywhere was the original design and it was wrong for this
+deployment. Computing an HMAC inside n8n needs a Code node, and n8n's Code node refuses
+`require('crypto')` unless the container is started with
+`NODE_FUNCTION_ALLOW_BUILTIN=crypto` - which on a managed n8n may not be available at
+all, and which turns "add an integration" into "rebuild the container". The bearer token
+proves only that the caller knows the secret: it does not prove the body arrived
+unaltered, and a captured request stays valid until the secret is rotated. That trade is
+acceptable here precisely because this endpoint is reachable only on the internal Docker
+network, so anyone positioned to capture or alter the request is already inside the host.
+
+Body fields either way: `message` (required, the enquiry itself); `phone`, `platform`,
+`name` (optional free text - whatever n8n actually knows); `externalId` (optional, n8n's
+own id for the message); `receivedAt` (optional ISO timestamp, for a backfilled or
+replayed message where "now" would be wrong). A retried delivery with the same
+`externalId` is answered `201` with the row it already made, not a second row - so a lost
+response does not double an enquiry into the queue.
 
 See `src/lib/webhook-signature.ts` for the verification itself and
-`src/features/leads/intake/schemas.ts` for the exact payload shape.
+`src/features/leads/intake/schemas.ts` for the exact payload shape. `npm run
+intake:simulate -- "some message"` sends one signed test message without n8n involved.
 
 **Why the payload stays this thin.** Nobody has built extraction of a fabric, a size or
 a category out of a raw sentence - that is a real piece of work, probably an LLM step
@@ -520,6 +539,16 @@ the only honest measurement of demand this business has. So a message lands in
 the customer, place what was asked for in the taxonomy, and save - the same `LeadFields`
 component, seeded with a guess instead of a blank. `leads.source = 'automation'` marks
 what came through this path, the same way `'import'` marks a spreadsheet row.
+
+**A reviewed row keeps its page.** Promoting a message is the ordinary way it stops
+being `pending`, and a Server Action re-renders the route it was called from - so by the
+time the response paints, `/intake/[id]` is looking at a row it would once have called
+`notFound()` on. That turned every successful save into a 404 and swallowed the lead
+reference the reviewer had just earned. So the page answers 404 only when there is no
+such row, and renders the outcome - "Recorded", with a link to the lead - whenever the
+row has already been dealt with. The same panel is what a colleague sees if they had the
+message open when someone else handled it, which is the case the promote action's
+`status = 'pending'` re-check exists for.
 
 **`imports:create` gates the queue**, not `leads:read` or `leads:create` - the same
 permission the CSV importer uses, and the same reasoning: promoting a queue of automated

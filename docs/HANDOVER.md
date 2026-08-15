@@ -37,17 +37,25 @@ npm run verify        # typecheck, lint, format check, tests
 npm run dev           # http://localhost:3000
 ```
 
-At the last commit: `main` is even with `origin/main`, everything already pushed.
 `git log` is the honest history — every commit message explains the reasoning behind
 that change, so `git log -p` on a feature is often faster than reading the files cold.
 
-**The working tree is currently not clean.** The n8n intake feature described below is
-built and verified (`npm run verify` passes: 587 tests across 27 files, typecheck, lint,
-format; migrations through `0006_cloudy_rhino` applied) but sits uncommitted, waiting on
-the owner's own look at it and the browser walkthrough of `/intake` that neither he nor
-the agent that built it has done yet — see "Where the last session stopped". Do not
-discard these changes; check `git status` and read them before assuming they are scratch
-work.
+**Two things to know before you trust `npm run verify`:**
+
+1. **The working tree is not clean, and that is deliberate.** The n8n intake work sits
+   on the branch `feature/n8n-lead-intake` (commit `679312d`, plus uncommitted follow-up
+   fixes from browser testing), unpushed, waiting on the owner. Do not discard it; read
+   `git status` before assuming any of it is scratch work.
+2. **Three tests in `src/features/analytics/range.test.ts` fail, and they are not
+   yours.** They fail identically on `e7aa54e`, before the intake work started.
+   `parseRange` takes an injectable `now` but line 93 reads the real clock via
+   `todayInBusinessTime()` while the range start uses the injected date, so the two
+   disagree by a day once the real date passes the date pinned in the test
+   (2026-08-14). One-line fix: `const today = businessDate(now);`. Harmless in
+   production, where `now` defaults to the real clock and both agree. Everything else
+   passes: typecheck, lint, format, and 580 other tests.
+
+Migrations through `0006_cloudy_rhino` are applied.
 
 ## Where the project stands
 
@@ -66,11 +74,11 @@ Built, working, committed:
 | Analytics             | Boards, not one dashboard. Demand board built with Chart.js; money, stock and orders declared as planned             |
 | Demo data             | `npm run db:demo` invents ~140 leads; `npm run db:demo -- clear` removes them                                        |
 
-Built, working, **not yet committed** — see "Where the last session stopped":
+Built and browser-verified, **on `feature/n8n-lead-intake`, unpushed**:
 
-| Area       | State                                                                                                          |
-| ---------- | -------------------------------------------------------------------------------------------------------------- |
-| n8n intake | `POST /n8n/intake`, HMAC-signed, staging table `lead_intake`, review queue at `/intake` — see docs/CONCEPTS.md |
+| Area       | State                                                                                                                    |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------ |
+| n8n intake | `POST /n8n/intake` (bearer token or HMAC), staging table `lead_intake`, review queue at `/intake`. Setup: `LOCAL-DEV.md` |
 
 Not built yet:
 
@@ -89,30 +97,44 @@ Not built yet:
 
 In the order the owner and I agreed. He may reprioritise — ask if it is not obvious.
 
-### 1. n8n intake — built, awaiting the owner's look and a commit
+### 1. n8n intake — built and working, awaiting review and a push
 
-Done: `POST /n8n/intake` (HMAC-signed, `crypto.timingSafeEqual`, five-minute replay
-window, idempotent on `externalId`), the `lead_intake` staging table, and the review
-queue at `/intake` that promotes a staged row to a lead or dismisses it. Full design and
-the exact payload contract for wiring an n8n HTTP node are in docs/CONCEPTS.md under
-"Automated intake from n8n". `resolveCustomer` was extracted to
-`src/features/leads/persist.ts` as planned, and is now shared by the manual form, the
-CSV importer and this.
+Done: `POST /n8n/intake` (bearer token or HMAC signature, `crypto.timingSafeEqual`,
+five-minute replay window, idempotent on `externalId`), the `lead_intake` staging table,
+and the review queue at `/intake` that promotes a staged row to a lead or dismisses it.
+The design is in docs/CONCEPTS.md under "Automated intake from n8n"; the step-by-step
+setup, including the production story, is in docs/LOCAL-DEV.md under "The n8n intake";
+the traps are in docs/TROUBLESHOOTING.md. `docs/n8n-intake-workflow.json` is a working
+two-node workflow to import, and `npm run intake:simulate -- "message"` posts a signed
+test message with no n8n involved at all. `resolveCustomer` was extracted to
+`src/features/leads/persist.ts` as planned, and is now shared by the manual form, the CSV
+importer and this.
+
+The owner has a working workflow running against it from his local Docker n8n.
 
 **Not yet done, on purpose:** n8n is not asked to guess taxonomy (fabric, size,
 category…) from the message text — nobody has built that extraction, and CONCEPTS.md
-explains why the contract stays thin until someone does. Also not done: actually
-configuring an n8n workflow to call this endpoint, which needs the owner's n8n instance
-and is his to wire up using the documented contract.
+explains why the contract stays thin until someone does. The obvious next step there is
+an LLM node inside the n8n workflow filling in `platform` and the garment fields, which
+would narrow the review to confirming rather than typing.
 
-**What still needs a human:** the whole feature is unreviewed and uncommitted, and
-nobody has clicked through `/intake` in a browser yet — the agent that built it had no
-login credentials for the one TOTP-protected owner account and could not. It did verify
-the webhook itself end-to-end with real signed HTTP requests against the running dev
-server (valid signature, wrong secret, stale timestamp, malformed body, idempotent
-retry — all behaved correctly, see git history once committed), and `npm run verify`
-passes in full. Two staged rows from that testing are sitting in the local dev database
-at `/intake` right now — a real, if synthetic, first thing to look at.
+**Verified end to end**, in the browser and over HTTP: bearer token, wrong token, no
+credentials, HMAC signature, stale timestamp, malformed body and an idempotent retry all
+behave correctly; a real n8n workflow on the owner's Docker n8n reached the endpoint; and
+promote and dismiss were both driven through `/intake` in the browser, producing leads
+289-291 with `source = 'automation'` in the local dev database.
+
+**Two bugs were found by doing that, and both are fixed** - they are worth knowing about
+because both were invisible to the type checker and to every test:
+
+- The review page rendered "Dismissed. Nothing was recorded." the instant it opened.
+  `idleActionState` is `{ ok: true, data: undefined }`, so a component asking only
+  `state.ok` gets `true` before anything has been submitted. Test `data !== undefined`,
+  which is what `LeadForm` already did and what the intake form now does too.
+- Promoting a message 404'd, hiding the new lead's reference. A Server Action re-renders
+  the route it was called from, and by then the staged row is no longer `pending`, so the
+  page's own `notFound()` fired on success. The page now renders an outcome panel for an
+  already-reviewed row and reserves 404 for a row that does not exist.
 
 ### 2. Brand assets (needs the owner)
 
@@ -221,6 +243,24 @@ non-session HTTP endpoint needs an entry there, or it will silently never receiv
 request in the first place**, and the failure looks exactly like a working endpoint
 rejecting everything, not like a routing problem.
 
+**`idleActionState` is `{ ok: true, data: undefined }`, so `state.ok` is true before a
+form has ever been submitted.** A panel rendered on `state.ok` alone appears the instant
+the page opens - the intake review page greeted every visitor with "Dismissed. Nothing
+was recorded." in place of the form. Test `state.data !== undefined`, and give the action
+something to return if its success would otherwise carry nothing.
+
+**A Server Action re-renders the route it was called from, so a page can 404 on its own
+success.** `/intake/[id]` called `notFound()` for any row that was not `pending` - which,
+immediately after promoting one, is the row you just promoted. The save worked and the
+screen said "page not found". A page whose action changes the thing the page is keyed on
+has to render that outcome rather than treat it as absence.
+
+**A signature can be wrong because the body was re-encoded, not because the secret is.**
+n8n's Raw body mode with content type `application/json` JSON-encodes the string it is
+given, so a body that is already JSON arrives double-quoted and the HMAC covers different
+bytes. Hours went into suspecting the secret. When a signature check fails, log what
+actually arrived - `rawBody.length` alone would have found it immediately.
+
 ## Deliberate deviations - do not "fix" these
 
 Two things look like rule violations and are not. Both are documented at length in the
@@ -262,14 +302,27 @@ informed" — this file's previous revision. `main` was even with `origin/main` 
 point and stayed that way; nothing has been pushed since.
 
 The session after that one built the n8n intake feature described under "The plan from
-here" § 1: the schema, the signed endpoint, the review queue, and the `persist.ts`
-refactor the previous handover asked for. `npm run verify` passes in full and the
-webhook was exercised end-to-end against a running dev server. **None of it is
-committed.** `git status` will show a working tree that is not clean — read it, do not
-discard it. The owner has not reviewed this code and has not clicked through `/intake`
-himself yet; both are real gaps, not formalities, given "he tests in the browser
-himself" below.
+here" § 1: the schema, the endpoint, the review queue, and the `persist.ts` refactor the
+previous handover asked for. It lives on **`feature/n8n-lead-intake`** — commit
+`679312d` plus uncommitted fixes found while testing in the browser. Nothing is pushed
+and no PR is open.
 
-Two things are his to decide, not yours to assume: whether this uncommitted work gets
-committed as one change or split up, and whether brand assets or deployment comes next
-once it lands.
+The owner ran a real n8n workflow against it from his own Docker n8n, and promote and
+dismiss were both driven through `/intake`, producing leads 289-291. The two bugs that
+walkthrough exposed are fixed and recorded under "Traps" — both were invisible to the
+type checker and to every test, which is the argument for the browser step.
+
+One design decision was reversed part-way and is worth not re-reversing: **the endpoint
+originally demanded an HMAC signature and now also accepts a plain bearer token.**
+Requiring the signature meant n8n needed a Code node, and n8n's sandbox refuses
+`require('crypto')` unless the container is started with
+`NODE_FUNCTION_ALLOW_BUILTIN=crypto` — which on a managed n8n may not be possible, and
+which makes "add an integration" mean "rebuild the container". That is not a workable
+production story for a solo operator with one VPS. The signature path is still there,
+still tested, and still wins when both credentials are sent. `CONCEPTS.md` states plainly
+what the token gives up and why it is acceptable for an internal-network-only endpoint.
+
+Three things are the owner's to decide, not yours to assume: whether this branch is
+pushed and merged as one change or split up; whether the pre-existing `range.test.ts`
+failure is fixed on this branch or its own; and whether brand assets or deployment comes
+next once it lands.

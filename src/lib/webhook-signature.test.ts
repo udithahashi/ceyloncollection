@@ -2,7 +2,7 @@ import { createHmac } from 'node:crypto';
 
 import { describe, expect, it } from 'vitest';
 
-import { verifyWebhookSignature } from './webhook-signature';
+import { verifyWebhookRequest, verifyWebhookSignature } from './webhook-signature';
 
 // Fixed on purpose, not a real credential, so the signatures below are reproducible.
 const secret = 'a-secret-at-least-this-long-for-testing-purposes'; // secret-scan:allow
@@ -87,5 +87,72 @@ describe('verifyWebhookSignature', () => {
     expect(
       verifyWebhookSignature(body, timestamp, sign(body, timestamp), secret, 5 * 60_000)
     ).toEqual({ ok: false, reason: 'stale' });
+  });
+});
+
+describe('verifyWebhookRequest', () => {
+  const base = {
+    rawBody: '{"message":"hello"}',
+    authorization: null,
+    timestamp: null,
+    signature: null,
+    secret,
+  };
+
+  it('accepts a bearer token that matches the secret', () => {
+    expect(verifyWebhookRequest({ ...base, authorization: `Bearer ${secret}` })).toEqual({
+      ok: true,
+      method: 'bearer',
+    });
+  });
+
+  it('accepts the raw secret without the Bearer prefix, which is easy to omit', () => {
+    expect(verifyWebhookRequest({ ...base, authorization: secret })).toEqual({
+      ok: true,
+      method: 'bearer',
+    });
+  });
+
+  it('rejects a bearer token that does not match', () => {
+    expect(verifyWebhookRequest({ ...base, authorization: 'Bearer not-the-secret' })).toEqual({
+      ok: false,
+      reason: 'badToken',
+    });
+  });
+
+  it('rejects a request carrying no credentials at all', () => {
+    expect(verifyWebhookRequest(base)).toEqual({ ok: false, reason: 'noCredentials' });
+  });
+
+  it('accepts a correctly signed request', () => {
+    const timestamp = String(Date.now());
+
+    expect(
+      verifyWebhookRequest({ ...base, timestamp, signature: sign(base.rawBody, timestamp) })
+    ).toEqual({ ok: true, method: 'signature' });
+  });
+
+  /**
+   * The important one. A caller that signs must never be quietly downgraded to the
+   * weaker check just because it also sent an Authorization header - otherwise a valid
+   * token would paper over a signature that does not match the body.
+   */
+  it('checks the signature, not the token, when both are present', () => {
+    const timestamp = String(Date.now());
+
+    expect(
+      verifyWebhookRequest({
+        ...base,
+        authorization: `Bearer ${secret}`,
+        timestamp,
+        signature: sign('a different body', timestamp),
+      })
+    ).toEqual({ ok: false, reason: 'badSignature' });
+  });
+
+  it('does not fall back to the token when a signature is only half-sent', () => {
+    expect(
+      verifyWebhookRequest({ ...base, authorization: `Bearer ${secret}`, timestamp: '123' })
+    ).toEqual({ ok: false, reason: 'missingHeaders' });
   });
 });
