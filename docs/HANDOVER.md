@@ -69,6 +69,8 @@ Built, working, committed:
 | n8n intake            | `POST /n8n/intake` (bearer token or HMAC), staging table `lead_intake`, review queue at `/intake`. Setup: `LOCAL-DEV.md` |
 | CI                    | `.github/workflows/ci.yml` Build step has the env vars `@/lib/env` needs at import time; was silently red before         |
 | Deployment            | `Dockerfile`, `docker/compose.prod.yml`, GHCR publish in CI, nightly backup + restore drill. See `docs/DEPLOYMENT.md`    |
+| Activity log page     | `/activity`, `activityLog:read`-gated, filter by action, paginated                                                       |
+| Dev-only design page  | `/dev/design` - the old dashboard component showcase, `notFound()` in production                                         |
 
 Not built yet:
 
@@ -77,8 +79,6 @@ Not built yet:
 - **Brand assets.** No real logo — the owner has hired a human designer for it, so this
   is no longer an AI-generation task; see §2. `src/app/icon.tsx` is a coded placeholder
   favicon, not a designed asset. No empty-state illustrations yet either.
-- **Activity log UI.** Rows are written faithfully; no page reads them. The permission
-  (`activityLog:read`) already exists.
 - **Money, stock, orders.** Declared in `src/features/analytics/boards.ts` and shown as
   planned. No tables, no queries.
 
@@ -206,11 +206,22 @@ charts to the demand board — that separation is the point of the boards struct
 
 ### 5. Smaller pending items
 
-- **Trim the dashboard.** `src/app/(admin)/page.tsx` still carries a "Design foundations"
-  section — a leftover component showcase from the design-system phase. It should go now
-  that the page has real numbers. Consider moving it to a dev-only route if it is still
-  useful.
-- **Activity log page.** `activityLog:read` exists, the rows exist, nothing shows them.
+- ~~Trim the dashboard.~~ **Done.** The "Design foundations" showcase moved to
+  `/dev/design` (`src/app/(admin)/dev/design/page.tsx`), gated on
+  `isProductionDeployment` from `@/lib/env` rather than a permission - it is not
+  sensitive, it simply is not the owner's day-to-day tool. `notFound()` in
+  production, reachable in development. The dashboard itself lost the section, the
+  now-unused imports, and the `theme`/`themeName` it only existed for.
+- ~~Activity log page.~~ **Done.** `/activity` (`src/app/(admin)/activity/page.tsx`),
+  gated on `activityLog:read`, in the nav under Configuration. One filter (by
+  action, plain `<form method="get">` with a submit button - `SelectField` is a
+  Server Component on purpose, so no client-side auto-submit), the same
+  URL-is-the-state pagination the leads list uses. `src/features/activity-log/`
+  holds the query, the filter parsing, and a `Record<ActivityAction, string>`
+  label map (`labels.ts`) - a lookup table rather than a string transform, so a
+  new action added to the schema without a label is a type error. Verified with
+  the real dev database: 83 real rows, actor names, "Lead 291"-style entity
+  labels, the action filter narrowing correctly, pagination at 50/page.
 - **Browser walkthroughs the owner has not done yet:** add a photo to a lead (a portrait
   phone photo, to confirm it is not sideways), import `public/lead-import-template.csv`,
   look at `/analytics/demand` in both themes, and — new — open `/intake`, review one of

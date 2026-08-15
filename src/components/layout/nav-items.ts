@@ -1,6 +1,7 @@
 import {
   BarChart3,
   Bot,
+  History,
   Inbox,
   LayoutDashboard,
   Settings,
@@ -28,7 +29,8 @@ export type NavItem = {
    * the real route tree, so this widens by itself as pages are added - and a
    * typo becomes a type error rather than a broken link.
    */
-  href?: '/' | '/team' | '/taxonomy' | '/leads' | '/customers' | '/analytics' | '/intake';
+  href?:
+    '/' | '/team' | '/taxonomy' | '/leads' | '/customers' | '/analytics' | '/intake' | '/activity';
   /** Shown as a hint under the label. */
   description?: string;
   /**
@@ -80,6 +82,7 @@ export const navSections: readonly NavSection[] = [
     items: [
       { label: 'Taxonomy', icon: Tags, href: '/taxonomy', permission: 'taxonomy:read' },
       { label: 'Team', icon: ShieldCheck, href: '/team', permission: 'users:manage' },
+      { label: 'Activity', icon: History, href: '/activity', permission: 'activityLog:read' },
       { label: 'Settings', icon: Settings, permission: 'settings:read' },
     ],
   },
