@@ -29,7 +29,7 @@ export function RangePicker({
   range,
   today,
 }: {
-  /** The board's path, e.g. `/analytics/demand`. */
+  /** The board's path, e.g. `/admin/analytics/demand`. */
   action: string;
   range: DateRange;
   /** Today in business time, so the date inputs cannot offer the future. */

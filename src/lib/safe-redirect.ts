@@ -12,8 +12,14 @@
  * paths are allowed through.
  */
 
-/** Where to go when the requested target is missing or not allowed. */
-export const DEFAULT_REDIRECT = '/';
+/**
+ * Where to go when the requested target is missing or not allowed.
+ *
+ * The dashboard, not `/` - `/` is the public shop window, and signing in to the
+ * back office only to be shown the marketing site would be a bug that looks
+ * like a design decision.
+ */
+export const DEFAULT_REDIRECT = '/admin';
 
 /**
  * Paths that are never a sensible destination, because landing on them after
@@ -25,9 +31,9 @@ const NEVER_REDIRECT_TO = ['/login', '/two-factor', '/setup-two-factor', '/accep
  * Returns `target` if it is a safe same-site path, otherwise the default.
  *
  * @example
- * safeRedirect('/leads/123')            // '/leads/123'
- * safeRedirect('https://evil.test')     // '/'
- * safeRedirect('//evil.test')           // '/'
+ * safeRedirect('/admin/leads/123')      // '/admin/leads/123'
+ * safeRedirect('https://evil.test')     // '/admin'
+ * safeRedirect('//evil.test')           // '/admin'
  */
 export function safeRedirect(target: unknown, fallback = DEFAULT_REDIRECT): string {
   if (typeof target !== 'string' || target.length === 0) return fallback;

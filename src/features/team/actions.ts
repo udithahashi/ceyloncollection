@@ -49,7 +49,7 @@ import {
 
 const log = createLogger('team-actions');
 
-const TEAM_PATH = '/team';
+const TEAM_PATH = '/admin/team';
 
 /** What the invite form shows after a successful invitation. */
 export interface IssuedInvitation {

@@ -67,14 +67,14 @@ export function LeadFilterBar({
 
     params.sort();
     const query = params.toString();
-    router.push(query === '' ? '/leads' : `/leads?${query}`);
+    router.push(query === '' ? '/admin/leads' : `/admin/leads?${query}`);
   }
 
   return (
     <form
       ref={formRef}
       method="get"
-      action="/leads"
+      action="/admin/leads"
       onSubmit={submit}
       className="flex flex-col gap-4"
     >
@@ -203,7 +203,7 @@ export function LeadFilterBar({
 
         {active > 0 ? (
           <>
-            <Link href="/leads" className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
+            <Link href="/admin/leads" className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
               Clear
             </Link>
 

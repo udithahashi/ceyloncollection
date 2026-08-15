@@ -11,12 +11,12 @@ import { DEFAULT_REDIRECT, safeRedirect } from './safe-redirect';
 
 describe('safeRedirect', () => {
   it('allows a same-site absolute path', () => {
-    expect(safeRedirect('/leads')).toBe('/leads');
-    expect(safeRedirect('/leads/8f2c')).toBe('/leads/8f2c');
+    expect(safeRedirect('/admin/leads')).toBe('/admin/leads');
+    expect(safeRedirect('/admin/leads/8f2c')).toBe('/admin/leads/8f2c');
   });
 
   it('keeps the query string and fragment', () => {
-    expect(safeRedirect('/leads?status=new#top')).toBe('/leads?status=new#top');
+    expect(safeRedirect('/admin/leads?status=new#top')).toBe('/admin/leads?status=new#top');
   });
 
   describe('rejects off-site targets', () => {
@@ -44,8 +44,8 @@ describe('safeRedirect', () => {
       ['undefined', undefined],
       ['an empty string', ''],
       ['a number', 42],
-      ['an array', ['/leads']],
-      ['an object', { path: '/leads' }],
+      ['an array', ['/admin/leads']],
+      ['an object', { path: '/admin/leads' }],
     ])('%s', (_label, target) => {
       expect(safeRedirect(target)).toBe(DEFAULT_REDIRECT);
     });

@@ -30,7 +30,14 @@ export type NavItem = {
    * typo becomes a type error rather than a broken link.
    */
   href?:
-    '/' | '/team' | '/taxonomy' | '/leads' | '/customers' | '/analytics' | '/intake' | '/activity';
+    | '/admin'
+    | '/admin/team'
+    | '/admin/taxonomy'
+    | '/admin/leads'
+    | '/admin/customers'
+    | '/admin/analytics'
+    | '/admin/intake'
+    | '/admin/activity';
   /** Shown as a hint under the label. */
   description?: string;
   /**
@@ -58,31 +65,36 @@ export const navSections: readonly NavSection[] = [
   {
     heading: 'Overview',
     items: [
-      { label: 'Dashboard', icon: LayoutDashboard, href: '/' },
+      { label: 'Dashboard', icon: LayoutDashboard, href: '/admin' },
       /*
        * Alongside the dashboard rather than under Demand: analytics is one entry that
        * opens onto several boards - demand now, money and stock later - and filing it
        * under leads would imply the charts are only ever about leads.
        */
-      { label: 'Analytics', icon: BarChart3, href: '/analytics', permission: 'analytics:read' },
+      {
+        label: 'Analytics',
+        icon: BarChart3,
+        href: '/admin/analytics',
+        permission: 'analytics:read',
+      },
     ],
   },
   {
     heading: 'Demand',
     items: [
-      { label: 'Leads', icon: Inbox, href: '/leads', permission: 'leads:read' },
-      { label: 'Customers', icon: Users, href: '/customers', permission: 'customers:read' },
+      { label: 'Leads', icon: Inbox, href: '/admin/leads', permission: 'leads:read' },
+      { label: 'Customers', icon: Users, href: '/admin/customers', permission: 'customers:read' },
       // `imports:create` rather than `leads:read`: this is the review side of the
       // n8n intake, the same elevated-trust gate the CSV importer already uses.
-      { label: 'Intake', icon: Bot, href: '/intake', permission: 'imports:create' },
+      { label: 'Intake', icon: Bot, href: '/admin/intake', permission: 'imports:create' },
     ],
   },
   {
     heading: 'Configuration',
     items: [
-      { label: 'Taxonomy', icon: Tags, href: '/taxonomy', permission: 'taxonomy:read' },
-      { label: 'Team', icon: ShieldCheck, href: '/team', permission: 'users:manage' },
-      { label: 'Activity', icon: History, href: '/activity', permission: 'activityLog:read' },
+      { label: 'Taxonomy', icon: Tags, href: '/admin/taxonomy', permission: 'taxonomy:read' },
+      { label: 'Team', icon: ShieldCheck, href: '/admin/team', permission: 'users:manage' },
+      { label: 'Activity', icon: History, href: '/admin/activity', permission: 'activityLog:read' },
       { label: 'Settings', icon: Settings, permission: 'settings:read' },
     ],
   },

@@ -22,9 +22,21 @@ them that way — it is a deliberate house style, not decoration.
 | 5     | [docs/DEPLOYMENT.md](DEPLOYMENT.md)           | The production stack, deploys, backups, the restore drill |
 | 6     | [docs/TROUBLESHOOTING.md](TROUBLESHOOTING.md) | When something breaks                                     |
 | 7     | [docs/GLOSSARY.md](GLOSSARY.md)               | Any term you or the owner does not recognise              |
+| 8     | [docs/ORIGINAL-PLAN.md](ORIGINAL-PLAN.md)     | Optional. The pre-Phase-0 plan this project started from  |
 
 `CLAUDE.md` simply points at `AGENTS.md`, so both Claude Code and Cursor read the same
 rules. There is no second source of truth to keep in step.
+
+## Where this project started
+
+The owner planned this project with Cursor before switching tools over a credit limit,
+and asked that plan be kept rather than lost. It lives verbatim at
+[docs/ORIGINAL-PLAN.md](ORIGINAL-PLAN.md), with a provenance note at the top listing the
+known places actual implementation diverged from it (n8n's bearer-token fallback, no
+TanStack Table/nuqs, the public website now being in scope). Read it for the _reasoning_
+behind decisions already made - PostgreSQL over MySQL, one Next.js app instead of
+Laravel + React, the phone-as-unique-key model - all of which still hold. For _current
+state_, this file and the code are the source of truth, not that plan.
 
 ## Confirm the state yourself
 

@@ -310,7 +310,7 @@ export async function confirmTwoFactorEnrolmentAction(
 
     await logActivity({ action: 'auth.twoFactorEnabled', actor: session.user });
 
-    redirect('/');
+    redirect('/admin');
   });
 }
 

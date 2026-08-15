@@ -179,12 +179,12 @@ function Done({ outcome }: { outcome: ImportOutcome }) {
         </p>
 
         <div className="flex flex-wrap gap-3 pt-1">
-          <Link href="/leads" className={buttonVariants({ variant: 'primary', size: 'sm' })}>
+          <Link href="/admin/leads" className={buttonVariants({ variant: 'primary', size: 'sm' })}>
             See the leads
           </Link>
 
           <Link
-            href="/analytics/demand"
+            href="/admin/analytics/demand"
             className={buttonVariants({ variant: 'secondary', size: 'sm' })}
           >
             Demand board

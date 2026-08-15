@@ -42,7 +42,7 @@ import {
   taxonomyValueSchema,
 } from './schemas';
 
-const basePath = (key: TaxonomyKey) => `/taxonomy/${key}`;
+const basePath = (key: TaxonomyKey) => `/admin/taxonomy/${key}`;
 
 /** Reads the taxonomy out of the form before the rest can be validated against it. */
 function readKey(formData: FormData): TaxonomyKey | null {

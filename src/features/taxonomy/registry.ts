@@ -10,7 +10,7 @@
  * name, description, order, active - is handled once. The few columns that differ
  * are declared here as `extras` and rendered generically.
  *
- * The key is the URL segment, so `/taxonomy/lead-statuses` needs no lookup table.
+ * The key is the URL segment, so `/admin/taxonomy/lead-statuses` needs no lookup table.
  *
  * Safe to import in a client component: labels and field descriptions only, no
  * database.

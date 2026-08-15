@@ -56,7 +56,7 @@ export function CustomerFilterBar({
 
     params.sort();
     const query = params.toString();
-    router.push(query === '' ? '/customers' : `/customers?${query}`);
+    router.push(query === '' ? '/admin/customers' : `/admin/customers?${query}`);
   }
 
   return (
@@ -64,12 +64,12 @@ export function CustomerFilterBar({
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-xs text-ink-secondary">Start from</span>
 
-        <Preset href={`/customers${toSearchParams({ ready: true, sort: 'ready' })}`}>
+        <Preset href={`/admin/customers${toSearchParams({ ready: true, sort: 'ready' })}`}>
           Ready to buy
         </Preset>
 
         <Preset
-          href={`/customers${toSearchParams({
+          href={`/admin/customers${toSearchParams({
             open: true,
             quiet: FOLLOW_UP_AFTER_DAYS,
             sort: 'oldest',
@@ -78,17 +78,17 @@ export function CustomerFilterBar({
           Needs a follow-up
         </Preset>
 
-        <Preset href={`/customers${toSearchParams({ repeat: true, sort: 'requests' })}`}>
+        <Preset href={`/admin/customers${toSearchParams({ repeat: true, sort: 'requests' })}`}>
           Repeat customers
         </Preset>
 
-        <Preset href="/customers">Everyone</Preset>
+        <Preset href="/admin/customers">Everyone</Preset>
       </div>
 
       <form
         ref={formRef}
         method="get"
-        action="/customers"
+        action="/admin/customers"
         onSubmit={submit}
         className="flex flex-col gap-4"
       >
@@ -158,7 +158,10 @@ export function CustomerFilterBar({
 
           {active > 0 ? (
             <>
-              <Link href="/customers" className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
+              <Link
+                href="/admin/customers"
+                className={buttonVariants({ variant: 'ghost', size: 'sm' })}
+              >
                 Clear
               </Link>
               <span className="text-xs text-ink-secondary">

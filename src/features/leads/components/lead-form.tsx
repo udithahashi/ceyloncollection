@@ -122,7 +122,7 @@ export function LeadForm({ options, today, defaultStatusId, lead }: LeadFormProp
           ) : (
             <>
               Saved as lead {saved.reference}.{' '}
-              <Link href={`/leads/${saved.reference}`} className="underline">
+              <Link href={`/admin/leads/${saved.reference}`} className="underline">
                 Open it
               </Link>
               , or start typing the next one.
@@ -135,7 +135,10 @@ export function LeadForm({ options, today, defaultStatusId, lead }: LeadFormProp
         <SubmitButton variant="primary">{editing ? 'Save changes' : 'Record lead'}</SubmitButton>
 
         {editing ? (
-          <Link href={`/leads/${lead.reference}`} className={buttonVariants({ variant: 'ghost' })}>
+          <Link
+            href={`/admin/leads/${lead.reference}`}
+            className={buttonVariants({ variant: 'ghost' })}
+          >
             Cancel
           </Link>
         ) : null}

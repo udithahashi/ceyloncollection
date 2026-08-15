@@ -65,7 +65,7 @@ export function CustomerTable({ rows }: { rows: readonly CustomerRow[] }) {
                 <Td className="align-top">
                   <div className="flex flex-col gap-0.5">
                     <Link
-                      href={`/customers/${row.id}`}
+                      href={`/admin/customers/${row.id}`}
                       className="focus-visible:ring-action-ring rounded-control font-medium text-ink-primary underline-offset-2 hover:underline focus-visible:ring-2 focus-visible:outline-none"
                     >
                       {row.name ?? formatPhone(row.phone)}

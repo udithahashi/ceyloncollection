@@ -37,7 +37,7 @@ export function DeleteLeadButton({ leadId, reference }: { leadId: string; refere
 
         // Navigating on submit rather than on the result: the action revalidates
         // /leads, so by the time the browser gets there the row is already gone.
-        router.push('/leads');
+        router.push('/admin/leads');
       }}
     >
       <input type="hidden" name="id" value={leadId} />

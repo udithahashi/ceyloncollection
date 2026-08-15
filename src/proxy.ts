@@ -7,8 +7,9 @@
  * It does exactly two things, both cheap:
  *
  * 1. Issues a fresh CSP nonce and sets the Content-Security-Policy header.
- * 2. Sends anyone with no session cookie at all straight to the login page,
- *    to save rendering a layout that is about to redirect anyway.
+ * 2. Sends anyone with no session cookie who asks for a back-office page
+ *    straight to the login page, to save rendering a layout that is about to
+ *    redirect anyway. The public site is left alone - see PROTECTED_PREFIXES.
  *
  * What it deliberately does NOT do is authorise anything. It never reads the
  * database and never decides whether a role may see a page. The Next.js
@@ -22,31 +23,38 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
 /**
- * Paths reachable without a session. Everything else requires one.
+ * The only paths this shortcut redirects.
  *
- * `/_next` and friends are excluded by the matcher below rather than listed here.
+ * THIS LIST INVERTED WHEN THE PUBLIC SITE ARRIVED, AND THE REASONING MATTERS.
+ * Until then every route in the application needed a session, so the proxy could
+ * redirect anything not explicitly excused. Now `/` is a shop window that must
+ * answer an anonymous visitor, and the back office is the exception rather than
+ * the rule - so the gate names what it protects instead of what it lets through.
  *
- * Exported so a test can assert every entry is a route that exists. A typo here does
- * not fail loudly - it redirects a real page to the login form, which looks like a
- * session problem and sends you looking in entirely the wrong place.
+ * This is safe to state so bluntly only because the redirect is a performance
+ * shortcut and never the access check. `(back-office)/admin/layout.tsx` calls
+ * `requireUser` and every page and action authorises itself - see the note at the
+ * top of this file. If this list were the security boundary, inverting it would
+ * be how an application accidentally publishes its admin panel.
+ *
+ * Exported so a test can assert it matches the routes that actually exist.
+ */
+export const PROTECTED_PREFIXES = ['/admin'];
+
+/**
+ * Paths reachable without a session, and expected to be.
+ *
+ * Now purely documentation and a test fixture: nothing here is protected by the
+ * gate above, so no entry is load-bearing. It stays because "which pages are
+ * meant to be anonymous" is worth stating somewhere a test can check, and
+ * `proxy.test.ts` asserts each one is a real page under `(auth)`.
  */
 export const PUBLIC_PATHS = ['/login', '/two-factor', '/accept-invitation'];
 
-/**
- * Paths that prove who they are some other way, and so must never be bounced to the
- * login form. n8n has no session cookie to carry - it proves itself with an HMAC
- * signature, checked inside the route itself - so redirecting it here would mean the
- * webhook never receives a request at all, only ever the login page's HTML back at
- * whatever address n8n thinks this endpoint lives at.
- *
- * A prefix list rather than exact paths, unlike `PUBLIC_PATHS`: this is one integration
- * with room to grow a second signed route under the same prefix, and every one of them
- * shares the same reasoning for being here.
- */
-const SELF_AUTHENTICATING_PREFIXES = ['/n8n/'];
-
-function bypassesSessionGate(pathname: string): boolean {
-  return SELF_AUTHENTICATING_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+function isProtectedPath(pathname: string): boolean {
+  return PROTECTED_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+  );
 }
 
 /**
@@ -58,10 +66,6 @@ function bypassesSessionGate(pathname: string): boolean {
  * two implementations of one security check is one too many.
  */
 const SESSION_COOKIE = 'cc.session_token';
-
-function isPublicPath(pathname: string): boolean {
-  return PUBLIC_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
-}
 
 export function proxy(request: NextRequest): NextResponse {
   const nonce = crypto.randomUUID();
@@ -105,7 +109,7 @@ export function proxy(request: NextRequest): NextResponse {
   const { pathname, search } = request.nextUrl;
   const hasSessionCookie = request.cookies.has(SESSION_COOKIE);
 
-  if (!hasSessionCookie && !isPublicPath(pathname) && !bypassesSessionGate(pathname)) {
+  if (!hasSessionCookie && isProtectedPath(pathname)) {
     const loginUrl = new URL('/login', request.url);
     // Only a path is carried across, and `safeRedirect` validates it again on the
     // way back out. A `next` value is attacker-controlled input.

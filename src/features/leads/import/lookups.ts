@@ -147,7 +147,7 @@ export async function importLookups(): Promise<ImportLookups> {
     db.select(nameFields(tags)).from(tags).where(isNull(tags.deletedAt)),
   ]);
 
-  const categoryLookup = buildLookup('Categories', '/taxonomy/categories', categoryRows);
+  const categoryLookup = buildLookup('Categories', '/admin/taxonomy/categories', categoryRows);
 
   const byPair = new Map<string, string>();
   const byKey = new Map<string, string[]>();
@@ -177,18 +177,18 @@ export async function importLookups(): Promise<ImportLookups> {
   }
 
   return {
-    status: buildLookup('Lead statuses', '/taxonomy/lead-statuses', statusRows),
-    platform: buildLookup('Platforms', '/taxonomy/platforms', platformRows),
-    gender: buildLookup('Cloth genders', '/taxonomy/cloth-genders', genderRows),
-    city: buildLookup('Cities', '/taxonomy/cities', cityRows),
-    urgency: buildLookup('Urgency levels', '/taxonomy/urgency-levels', urgencyRows),
-    fabric: buildLookup('Fabrics', '/taxonomy/fabrics', fabricRows),
-    size: buildLookup('Sizes', '/taxonomy/sizes', sizeRows),
+    status: buildLookup('Lead statuses', '/admin/taxonomy/lead-statuses', statusRows),
+    platform: buildLookup('Platforms', '/admin/taxonomy/platforms', platformRows),
+    gender: buildLookup('Cloth genders', '/admin/taxonomy/cloth-genders', genderRows),
+    city: buildLookup('Cities', '/admin/taxonomy/cities', cityRows),
+    urgency: buildLookup('Urgency levels', '/admin/taxonomy/urgency-levels', urgencyRows),
+    fabric: buildLookup('Fabrics', '/admin/taxonomy/fabrics', fabricRows),
+    size: buildLookup('Sizes', '/admin/taxonomy/sizes', sizeRows),
     category: categoryLookup,
-    tag: buildLookup('Tags', '/taxonomy/tags', tagRows),
+    tag: buildLookup('Tags', '/admin/taxonomy/tags', tagRows),
     subcategory: {
       label: 'Sub-categories',
-      href: '/taxonomy/subcategories',
+      href: '/admin/taxonomy/subcategories',
       byPair,
       byKey,
       categoryOf,

@@ -120,9 +120,9 @@ export async function commitImportAction(
       },
     });
 
-    revalidatePath('/leads');
-    revalidatePath('/customers');
-    revalidatePath('/analytics/demand');
+    revalidatePath('/admin/leads');
+    revalidatePath('/admin/customers');
+    revalidatePath('/admin/analytics/demand');
 
     return ok({
       imported: outcome.imported,

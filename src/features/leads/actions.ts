@@ -117,8 +117,8 @@ export async function createLeadAction(
       },
     });
 
-    revalidatePath('/leads');
-    revalidatePath('/customers');
+    revalidatePath('/admin/leads');
+    revalidatePath('/admin/customers');
 
     return ok({ id: saved.id, reference: saved.reference });
   });
@@ -220,9 +220,9 @@ export async function updateLeadAction(
       },
     });
 
-    revalidatePath('/leads');
-    revalidatePath(`/leads/${result.lead.reference}`);
-    revalidatePath('/customers');
+    revalidatePath('/admin/leads');
+    revalidatePath(`/admin/leads/${result.lead.reference}`);
+    revalidatePath('/admin/customers');
 
     return ok({ id: result.lead.id, reference: result.lead.reference });
   });
@@ -279,9 +279,9 @@ export async function changeLeadStatusAction(
       metadata: { statusId: { from: before.statusId, to: statusId }, note: note !== null },
     });
 
-    revalidatePath('/leads');
-    revalidatePath(`/leads/${before.reference}`);
-    revalidatePath('/customers');
+    revalidatePath('/admin/leads');
+    revalidatePath(`/admin/leads/${before.reference}`);
+    revalidatePath('/admin/customers');
 
     return ok(undefined);
   });
@@ -328,8 +328,8 @@ export async function deleteLeadAction(
       entityLabel: `Lead ${deleted.reference}`,
     });
 
-    revalidatePath('/leads');
-    revalidatePath('/customers');
+    revalidatePath('/admin/leads');
+    revalidatePath('/admin/customers');
 
     return ok(undefined);
   });
@@ -362,8 +362,8 @@ export async function restoreLeadAction(
       entityLabel: `Lead ${restored.reference}`,
     });
 
-    revalidatePath('/leads');
-    revalidatePath('/customers');
+    revalidatePath('/admin/leads');
+    revalidatePath('/admin/customers');
 
     return ok(undefined);
   });

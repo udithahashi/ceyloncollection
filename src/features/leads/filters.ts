@@ -180,7 +180,7 @@ export function hasActiveFilters(filters: LeadFilters): boolean {
  * Filters back to a query string, dropping anything at its default.
  *
  * Keeping defaults out matters more than it looks: it is what makes the URL of the
- * plain list `/leads` rather than `/leads?sort=recent&page=1&size=25`, and it is
+ * plain list `/admin/leads` rather than `/admin/leads?sort=recent&page=1&size=25`, and it is
  * what makes two links to the same view compare equal.
  */
 export function toSearchParams(

@@ -176,7 +176,7 @@ export async function uploadLeadImagesAction(
       }
     }
 
-    revalidatePath(`/leads/${lead.reference}`);
+    revalidatePath(`/admin/leads/${lead.reference}`);
 
     if (added === 0) {
       // The per-file reasons go in `fieldErrors` so the form lists them under the file
@@ -254,7 +254,7 @@ export async function removeLeadImageAction(
       metadata: { imageId: image.id, originalName: image.originalName },
     });
 
-    revalidatePath(`/leads/${image.reference}`);
+    revalidatePath(`/admin/leads/${image.reference}`);
 
     return ok(undefined);
   });

@@ -29,7 +29,7 @@ export interface Board {
   detail: string;
   icon: LucideIcon;
   /** Present once the board exists. Absent means "planned". */
-  href?: '/analytics/demand';
+  href?: '/admin/analytics/demand';
   /** Every board is gated; the page itself checks, this only decides what is shown. */
   permission: Permission;
 }
@@ -42,7 +42,7 @@ export const boards: readonly Board[] = [
     detail:
       'Enquiries over time, the platforms they arrive on, and the categories, fabrics and sizes being asked for - the evidence behind what goes in the next shipment.',
     icon: TrendingUp,
-    href: '/analytics/demand',
+    href: '/admin/analytics/demand',
     permission: 'analytics:read',
   },
   {

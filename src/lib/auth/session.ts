@@ -36,7 +36,7 @@ export const LOGIN_PATH = '/login';
 /** Where someone without a TOTP authenticator is sent. */
 export const TWO_FACTOR_SETUP_PATH = '/setup-two-factor';
 /** Where someone whose role forbids the page is sent. */
-export const ACCESS_DENIED_PATH = '/access-denied';
+export const ACCESS_DENIED_PATH = '/admin/access-denied';
 
 /** The subset of the user record the application actually uses. */
 export interface SessionUser {

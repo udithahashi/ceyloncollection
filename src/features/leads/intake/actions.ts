@@ -123,9 +123,9 @@ export async function promoteIntakeAction(
       },
     });
 
-    revalidatePath('/leads');
-    revalidatePath('/customers');
-    revalidatePath('/intake');
+    revalidatePath('/admin/leads');
+    revalidatePath('/admin/customers');
+    revalidatePath('/admin/intake');
 
     return ok({ id: result.id, reference: result.reference });
   });
@@ -181,7 +181,7 @@ export async function rejectIntakeAction(
       metadata: { reason },
     });
 
-    revalidatePath('/intake');
+    revalidatePath('/admin/intake');
 
     return ok({ intakeId });
   });

@@ -49,7 +49,7 @@ export function LeadTable({ rows }: { rows: readonly LeadListRow[] }) {
             >
               <Td className="align-top">
                 <Link
-                  href={`/leads/${row.reference}`}
+                  href={`/admin/leads/${row.reference}`}
                   className="focus-visible:ring-action-ring rounded-control font-medium text-ink-primary tabular-nums underline-offset-2 hover:underline focus-visible:ring-2 focus-visible:outline-none"
                 >
                   {row.reference}
