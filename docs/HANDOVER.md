@@ -53,12 +53,11 @@ npm run dev           # http://localhost:3000
 `git log` is the honest history — every commit message explains the reasoning behind
 that change, so `git log -p` on a feature is often faster than reading the files cold.
 
-**State of `npm run verify` as of this revision:** `main` is even with `origin/main`,
-the n8n intake branch is merged, the `range.test.ts` clock bug is fixed, and CI's Build
-step has the env vars it needs. Typecheck, lint, and all 594 tests pass. The one thing
-`verify` will flag that is not a project problem: `format:check` fails on files under
-the untracked `.agents/` and `VibeSec-Skill/` directories (Claude Code skill installs,
-not part of this codebase) — ignore those, they are not tracked by git.
+**State of `npm run verify` as of this revision:** typecheck, lint, and all 601 tests
+pass. The one thing `verify` will flag that is not a project problem: `format:check`
+fails on files under the untracked `.agents/` and `VibeSec-Skill/` directories (Claude
+Code skill installs, not part of this codebase) — ignore those, they are not tracked by
+git.
 
 Migrations through `0006_cloudy_rhino` are applied.
 
@@ -66,31 +65,56 @@ Migrations through `0006_cloudy_rhino` are applied.
 
 Built, working, committed:
 
-| Area                  | State                                                                                                                    |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| Local dev environment | Docker PostgreSQL 17 + Redis 7, `npm run setup`, `npm run doctor`, wait-for-db, secret-scanning pre-commit hook          |
-| Configuration         | Zod-validated `@/lib/env`, `server-only`-guarded. Pino logger with redaction. `@/lib/time` for the Qatar timezone        |
-| Design system         | Theme tokens for `public`, `admin-dark`, `admin-light`; SSR theme switch with no flash; contrast asserted vs WCAG AA     |
-| Auth                  | Better Auth, invite-only, TOTP two-factor, four roles, permission table in `@/lib/auth/roles`, activity log              |
-| Taxonomy              | Ten lists, 389 seeded values, full CRUD with reorder/retire/restore, one page serves all ten via a registry              |
-| Leads and customers   | Schema, list with filters, detail, edit, status changer, `customer_summary` view, E.164 phone identity                   |
-| Spreadsheet import    | `/leads/import`: dry-run report per row, duplicate detection, no invented taxonomy values, safe to re-upload             |
-| Lead photos           | Upload, re-encode via sharp (EXIF stripped), thumbnails, `/lead-images/[id]/[variant]`, delete removes the file          |
-| Analytics             | Boards, not one dashboard. Demand board built with Chart.js; money, stock and orders declared as planned                 |
-| Demo data             | `npm run db:demo` invents ~140 leads; `npm run db:demo -- clear` removes them                                            |
-| n8n intake            | `POST /n8n/intake` (bearer token or HMAC), staging table `lead_intake`, review queue at `/intake`. Setup: `LOCAL-DEV.md` |
-| CI                    | `.github/workflows/ci.yml` Build step has the env vars `@/lib/env` needs at import time; was silently red before         |
-| Deployment            | `Dockerfile`, `docker/compose.prod.yml`, GHCR publish in CI, nightly backup + restore drill. See `docs/DEPLOYMENT.md`    |
-| Activity log page     | `/activity`, `activityLog:read`-gated, filter by action, paginated                                                       |
-| Dev-only design page  | `/dev/design` - the old dashboard component showcase, `notFound()` in production                                         |
+| Area                  | State                                                                                                                          |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| Local dev environment | Docker PostgreSQL 17 + Redis 7, `npm run setup`, `npm run doctor`, wait-for-db, secret-scanning pre-commit hook                |
+| Configuration         | Zod-validated `@/lib/env`, `server-only`-guarded. Pino logger with redaction. `@/lib/time` for the Qatar timezone              |
+| Design system         | Theme tokens for `public`, `admin-dark`, `admin-light`; SSR theme switch with no flash; contrast asserted vs WCAG AA           |
+| Auth                  | Better Auth, invite-only, TOTP two-factor, four roles, permission table in `@/lib/auth/roles`, activity log                    |
+| Taxonomy              | Ten lists, 389 seeded values, full CRUD with reorder/retire/restore, one page serves all ten via a registry                    |
+| Leads and customers   | Schema, list with filters, detail, edit, status changer, `customer_summary` view, E.164 phone identity                         |
+| Spreadsheet import    | `/admin/leads/import`: dry-run report per row, duplicate detection, no invented taxonomy values, safe to re-upload             |
+| Lead photos           | Upload, re-encode via sharp (EXIF stripped), thumbnails, `/lead-images/[id]/[variant]`, delete removes the file                |
+| Analytics             | Boards, not one dashboard. Demand board built with Chart.js; money, stock and orders declared as planned                       |
+| Demo data             | `npm run db:demo` invents ~140 leads; `npm run db:demo -- clear` removes them                                                  |
+| n8n intake            | `POST /n8n/intake` (bearer token or HMAC), staging table `lead_intake`, review queue at `/admin/intake`. Setup: `LOCAL-DEV.md` |
+| CI                    | `.github/workflows/ci.yml` Build step has the env vars `@/lib/env` needs at import time; was silently red before               |
+| Deployment            | `Dockerfile`, `docker/compose.prod.yml`, GHCR publish in CI, nightly backup + restore drill. See `docs/DEPLOYMENT.md`          |
+| Activity log page     | `/admin/activity`, `activityLog:read`-gated, filter by action, paginated                                                       |
+| Dev-only design page  | `/admin/dev/design` - the old dashboard showcase, `notFound()` in production                                                   |
+| Public website        | `/` - brand homepage, GSAP motion, Higgsfield imagery, every CTA opens WhatsApp. See `docs/ASSETS.md`                          |
+
+**The URL layout changed, and it is the first thing to know.** The back office now
+lives under `/admin`, because the public site wanted the bare domain. `/admin`,
+`/admin/leads`, `/admin/taxonomy` and so on; the sign-in flow keeps its own top-level
+paths (`/login`, `/two-factor`, `/accept-invitation`, `/setup-two-factor`).
+
+**There are two root layouts**, which is unusual enough to be worth stating plainly.
+`src/app/(public)/layout.tsx` and `src/app/(back-office)/layout.tsx` each render their
+own `<html>`. They exist because `robots` is set on a root layout and the two halves
+need opposite answers - the shop window must be indexable, the back office must never
+be. The public one also pins `data-theme="public"`, which is what swaps in the brand's
+editorial typefaces and square corners. Navigating between the two is a full page load,
+which is correct and rare.
+
+**The proxy's session gate is inverted from what it used to be.** `src/proxy.ts` now
+redirects only `PROTECTED_PREFIXES` (`/admin`) rather than everything not excused.
+That is safe only because the gate was always a performance shortcut and never the
+access check - the admin layout calls `requireUser`, and every page and action
+authorises itself. `proxy.test.ts` covers both directions now. Do not "restore" the old
+deny-everything behaviour without reading that file's comments; it would lock the
+public site behind the staff door.
 
 Not built yet:
 
-- **The public website.** Nothing exists under a `(public)` route group. The brand design
-  system is ready for it; the reference design is `reference/public-website.html`.
 - **Brand assets.** No real logo — the owner has hired a human designer for it, so this
   is no longer an AI-generation task; see §2. `src/app/icon.tsx` is a coded placeholder
   favicon, not a designed asset. No empty-state illustrations yet either.
+- **Public site beyond the homepage.** `/` is built. There is no second page — no
+  about, no journal, no browse. The nav is anchor links within the one page, and it is
+  hidden below `lg` on purpose: every section ends in a WhatsApp call to action and the
+  sticky header always shows one, so there is nothing a mobile menu would reach that
+  scrolling does not.
 - **Money, stock, orders.** Declared in `src/features/analytics/boards.ts` and shown as
   planned. No tables, no queries.
 
@@ -102,7 +126,7 @@ In the order the owner and I agreed. He may reprioritise — ask if it is not ob
 
 Done: `POST /n8n/intake` (bearer token or HMAC signature, `crypto.timingSafeEqual`,
 five-minute replay window, idempotent on `externalId`), the `lead_intake` staging table,
-and the review queue at `/intake` that promotes a staged row to a lead or dismisses it.
+and the review queue at `/admin/intake` that promotes a staged row to a lead or dismisses it.
 The design is in docs/CONCEPTS.md under "Automated intake from n8n"; the step-by-step
 setup, including the production story, is in docs/LOCAL-DEV.md under "The n8n intake";
 the traps are in docs/TROUBLESHOOTING.md. `docs/n8n-intake-workflow.json` is a working
@@ -122,7 +146,7 @@ would narrow the review to confirming rather than typing.
 **Verified end to end**, in the browser and over HTTP: bearer token, wrong token, no
 credentials, HMAC signature, stale timestamp, malformed body and an idempotent retry all
 behave correctly; a real n8n workflow on the owner's Docker n8n reached the endpoint; and
-promote and dismiss were both driven through `/intake` in the browser, producing leads
+promote and dismiss were both driven through `/admin/intake` in the browser, producing leads
 289-291 with `source = 'automation'` in the local dev database.
 
 **Two bugs were found by doing that, and both are fixed** - they are worth knowing about
@@ -154,10 +178,13 @@ automatically, no code change needed elsewhere. `BrandMark`
 (`src/components/layout/brand-mark.tsx`) is unaffected — it was already text, not an
 AI-generated asset, and stays that way until the designer's mark exists to reference.
 
-**Not yet decided:** whether empty-state illustrations (a separate, non-logo asset
-category) still go through Higgsfield, or wait for the same designer. Ask before
-generating any more image assets for this project — don't assume the door that closed
-for the logo is open or shut for illustrations.
+**Photographic imagery for the public site did go through Higgsfield**, and worked -
+five images from `nano_banana_pro`, every prompt recorded in `docs/ASSETS.md`. So the
+door is closed for the logo specifically, not for art direction generally.
+
+**Not yet decided:** whether empty-state illustrations for the back office (a separate
+category again — flat illustration rather than photography) go through Higgsfield or
+wait for the same designer. Ask before generating those.
 
 ### 3. Deployment to the Contabo VPS — scaffolded, not yet run for real
 
@@ -219,12 +246,12 @@ charts to the demand board — that separation is the point of the boards struct
 ### 5. Smaller pending items
 
 - ~~Trim the dashboard.~~ **Done.** The "Design foundations" showcase moved to
-  `/dev/design` (`src/app/(admin)/dev/design/page.tsx`), gated on
+  `/admin/dev/design` (`src/app/(back-office)/admin/dev/design/page.tsx`), gated on
   `isProductionDeployment` from `@/lib/env` rather than a permission - it is not
   sensitive, it simply is not the owner's day-to-day tool. `notFound()` in
   production, reachable in development. The dashboard itself lost the section, the
   now-unused imports, and the `theme`/`themeName` it only existed for.
-- ~~Activity log page.~~ **Done.** `/activity` (`src/app/(admin)/activity/page.tsx`),
+- ~~Activity log page.~~ **Done.** `/admin/activity` (`src/app/(back-office)/admin/activity/page.tsx`),
   gated on `activityLog:read`, in the nav under Configuration. One filter (by
   action, plain `<form method="get">` with a submit button - `SelectField` is a
   Server Component on purpose, so no client-side auto-submit), the same
@@ -236,10 +263,23 @@ charts to the demand board — that separation is the point of the boards struct
   labels, the action filter narrowing correctly, pagination at 50/page.
 - **Browser walkthroughs the owner has not done yet:** add a photo to a lead (a portrait
   phone photo, to confirm it is not sideways), import `public/lead-import-template.csv`,
-  look at `/analytics/demand` in both themes, and — new — open `/intake`, review one of
+  look at `/admin/analytics/demand` in both themes, and — new — open `/admin/intake`, review one of
   the two staged rows already sitting there, promote it, then dismiss the other. That
   last one is not optional polish: it is the one part of the n8n intake work nobody has
   actually clicked through yet.
+- **Watch the public site's motion in a real browser.** The GSAP work could not be
+  verified visually from here: the automated browser pane does not composite frames, so
+  `document.hidden` is true, `requestAnimationFrame` never fires, and GSAP's ticker
+  cannot advance — the hero sits at its `from` state of `opacity: 0` and looks broken
+  when it is not. Everything else about the page was checked (markup, images, tap
+  targets, no horizontal overflow at 375px), but whether the hero entrance and the
+  scroll reveals actually feel right is the one thing that needs human eyes. Open `/`,
+  scroll slowly, then turn on the OS "reduce motion" setting and reload — with it on,
+  every section must be immediately visible and static, never blank.
+- **The WhatsApp number is a placeholder.** `WHATSAPP_NUMBER` in
+  `src/features/site/content.ts` is `97450000000`. Every call to action on the public
+  site points at it, so the site is not shippable until the owner replaces it with the
+  real business number.
 
 ## Traps that have already caught someone
 
@@ -370,7 +410,7 @@ red at Build since Phase 0, not just this branch; `/n8n/intake` just made the ga
 visible for the first time on a PR).
 
 The owner ran a real n8n workflow against the intake endpoint from his own Docker n8n,
-and promote and dismiss were both driven through `/intake`, producing leads 289-291.
+and promote and dismiss were both driven through `/admin/intake`, producing leads 289-291.
 The two bugs that walkthrough exposed are fixed and recorded under "Traps" — both were
 invisible to the type checker and to every test, which is the argument for the browser
 step.
