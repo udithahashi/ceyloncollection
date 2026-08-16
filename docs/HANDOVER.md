@@ -82,7 +82,7 @@ Built, working, committed:
 | Deployment            | `Dockerfile`, `docker/compose.prod.yml`, GHCR publish in CI, nightly backup + restore drill. See `docs/DEPLOYMENT.md`          |
 | Activity log page     | `/admin/activity`, `activityLog:read`-gated, filter by action, paginated                                                       |
 | Dev-only design page  | `/admin/dev/design` - the old dashboard showcase, `notFound()` in production                                                   |
-| Public website        | `/` - brand homepage, GSAP motion, Higgsfield imagery, every CTA opens WhatsApp. See `docs/ASSETS.md`                          |
+| Public website        | `/` - batik-led editorial homepage, GSAP + Lenis motion, mobile drawer nav, offers. See `docs/ASSETS.md`                       |
 
 **The URL layout changed, and it is the first thing to know.** The back office now
 lives under `/admin`, because the public site wanted the bare domain. `/admin`,
@@ -110,11 +110,9 @@ Not built yet:
 - **Brand assets.** No real logo — the owner has hired a human designer for it, so this
   is no longer an AI-generation task; see §2. `src/app/icon.tsx` is a coded placeholder
   favicon, not a designed asset. No empty-state illustrations yet either.
-- **Public site beyond the homepage.** `/` is built. There is no second page — no
-  about, no journal, no browse. The nav is anchor links within the one page, and it is
-  hidden below `lg` on purpose: every section ends in a WhatsApp call to action and the
-  sticky header always shows one, so there is nothing a mobile menu would reach that
-  scrolling does not.
+- **Public site beyond the homepage.** `/` is built and is one long editorial scroll.
+  There is no second page — no about, no journal, no browse. The nav is anchor links
+  within that page, and there IS now a full-screen mobile drawer (`mobile-nav.tsx`).
 - **Money, stock, orders.** Declared in `src/features/analytics/boards.ts` and shown as
   planned. No tables, no queries.
 
@@ -276,12 +274,58 @@ charts to the demand board — that separation is the point of the boards struct
   scroll reveals actually feel right is the one thing that needs human eyes. Open `/`,
   scroll slowly, then turn on the OS "reduce motion" setting and reload — with it on,
   every section must be immediately visible and static, never blank.
-- **The WhatsApp number is a placeholder.** `WHATSAPP_NUMBER` in
-  `src/features/site/content.ts` is `97450000000`. Every call to action on the public
-  site points at it, so the site is not shippable until the owner replaces it with the
-  real business number.
+
+## The public site cannot launch until these two are real
+
+Both live in `src/features/site/content.ts`, and both are deliberate blanks rather
+than guesses.
+
+1. **The WhatsApp number.** `WHATSAPP_NUMBER` is `97450000000`. Every call to
+   action on the page points at it.
+2. **Every offer figure.** Free-delivery threshold, the regulars' discount, the
+   seasonal offer and its deadline all render as `___`, from the exported
+   `TODO_FIGURE` constant. Grep for `TODO_FIGURE` to find all of them. They are
+   blank on purpose: a discount is a promise the business has to keep, and
+   inventing one would be the same mistake as inventing "9,000+ pieces woven"
+   would have been. Fill them in, or delete the offers section.
 
 ## Traps that have already caught someone
+
+**A statically prerendered page silently breaks the CSP, and only in production.**
+`src/proxy.ts` issues a per-request nonce and Next stamps it onto every script and
+style tag. A prerendered page is built once, when there is no request and no nonce,
+so it ships with none - while the proxy still sends a nonce + `strict-dynamic`
+policy at runtime, and the browser refuses every script on the page. The public
+homepage hit this: 28 script tags, zero nonces, all blocked, while the dynamic
+`/login` had 20 tags and 20 nonces and was fine. It does not reproduce in `npm run
+dev`. The fix is `await connection()` from `next/server` at the top of the page -
+and note that **`export const dynamic = 'force-dynamic'` is not enough**; the route
+still reported `x-nextjs-prerender: 1` and served a nonce-less shell. Any new page
+under `(public)` needs the same line.
+
+**`pkill` does not work here, so you can end up testing a stale server.** Git Bash's
+`pkill -f "next start"` reports success and leaves the process running, which means
+a rebuild appears to change nothing and you go looking for a bug in your code. Twice
+in one session the "fix did not work" was actually a server from ten minutes ago.
+Kill by port instead, from PowerShell:
+`Get-NetTCPConnection -LocalPort 3001 -State Listen | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }`.
+
+**Lenis needs its stylesheet and its `anchors` option, or the page half-works.**
+`lenis/dist/lenis.css` is imported by `smooth-scroll.tsx` and is load-bearing: its
+first rule is `html.lenis { height: auto }`, which undoes the `h-full` this app puts
+on `<html>` - without it Lenis measures a viewport-height document and the page will
+not scroll. Separately, Lenis owns the scroll position, so a native anchor jump moves
+the browser without telling it and the page snaps back or does nothing. `anchors:
+true` fixes that, and it matters because every piece of navigation on the public site
+is an anchor, including the mobile drawer.
+
+**The automated browser here cannot verify animation.** Its pane does not composite
+frames, so `document.hidden` is true, `requestAnimationFrame` never fires, and GSAP's
+ticker cannot advance - elements sit at their `from` state looking broken when they
+are not. The same applies to CSS transitions. Markup, layout, tap targets and
+accessibility are all verifiable; how the motion _feels_ is not. Do not report
+animation as verified from here, and do not "fix" a stuck opacity that is only stuck
+because the pane is hidden.
 
 These are the expensive part of this handover. Each cost real time.
 

@@ -26,11 +26,27 @@ const OUT = path.join(ROOT, 'public', 'brand');
 
 /** `width` is the intended CSS width doubled, so the asset is sharp on retina. */
 const ASSETS = [
-  { name: 'hero', width: 1200 },
-  { name: 'loom', width: 1600 },
-  { name: 'edit-saree', width: 900 },
-  { name: 'edit-occasion', width: 900 },
-  { name: 'edit-everyday', width: 900 },
+  // Full-viewport hero, so it carries the largest budget of the set.
+  { name: 'hero', width: 2000 },
+
+  // The three focus categories and the lookbook, all shown in portrait cards.
+  { name: 'edit-batik-frock', width: 900 },
+  { name: 'edit-flower-frock', width: 900 },
+  { name: 'edit-sarong', width: 900 },
+  { name: 'look-1', width: 900 },
+  { name: 'look-2', width: 900 },
+  { name: 'look-3', width: 900 },
+
+  // The batik process, shown wide.
+  { name: 'craft-wax', width: 1400 },
+  { name: 'craft-dye', width: 1400 },
+  { name: 'detail-batik', width: 1400 },
+
+  // Offer panels. Artwork only - every word on these is HTML rendered on top,
+  // so nothing here needs to stay legible at large sizes.
+  { name: 'offer-delivery', width: 1200 },
+  { name: 'offer-loyalty', width: 1200 },
+  { name: 'offer-seasonal', width: 1200 },
 ];
 
 await mkdir(OUT, { recursive: true });

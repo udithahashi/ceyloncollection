@@ -1,31 +1,57 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { MessageCircle } from 'lucide-react';
 
 import { BrandMark } from '@/components/layout/brand-mark';
+import { cn } from '@/lib/cn';
 
 import { site, whatsappLink } from '../content';
+import { MobileNav } from './mobile-nav';
 
 /**
  * The public site's header.
  *
- * Sticky, because the WhatsApp action is the entire point of the page and it
- * should never be more than a glance away once someone has scrolled into the
- * collections.
+ * Transparent over the hero and solid once the reader has left it. That is not
+ * decoration: the hero is a photograph with type laid over it, and a solid bar
+ * across the top of it would cut the image in half at exactly the point it is
+ * meant to be doing its work.
  *
- * `BrandMark` is the wordmark, set in Marcellus. A real logo mark is being drawn
- * by a designer - see docs/HANDOVER.md §2 - and this is what stands in until it
- * arrives. It is type, not a placeholder image, so it is already correct at every
- * size and needs replacing only when there is something better to show.
+ * A plain scroll listener rather than ScrollTrigger, because this has to keep
+ * working if the animation library never loads - a header stuck transparent
+ * over a white section is unreadable, which is a real failure rather than a
+ * missing flourish.
+ *
+ * `BrandMark` is the wordmark in Marcellus. A real logo mark is being drawn by a
+ * designer - see docs/HANDOVER.md - and this stands in until it arrives. It is
+ * type, not a placeholder image, so it is already correct at every size.
  */
 export function SiteHeader() {
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 24);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
   return (
-    <header className="sticky top-0 z-50 border-b border-line-subtle bg-surface-page/95 backdrop-blur-sm">
-      <div className="mx-auto flex max-w-[1180px] items-center justify-between gap-6 px-6 py-5 lg:px-10">
+    <header
+      className={cn(
+        'fixed inset-x-0 top-0 z-50 transition-[background-color,border-color,padding] duration-300',
+        scrolled
+          ? 'border-b border-line-subtle bg-surface-page/95 py-3 backdrop-blur-sm'
+          : 'border-b border-transparent bg-transparent py-5'
+      )}
+    >
+      <div className="mx-auto flex max-w-[1240px] items-center justify-between gap-6 px-6 lg:px-10">
         <Link href="/" aria-label={`${site.name} home`}>
           <BrandMark className="text-base" />
         </Link>
 
-        <nav aria-label="Main" className="hidden items-center gap-9 lg:flex">
+        <nav aria-label="Main" className="hidden items-center gap-10 lg:flex">
           {site.nav.map((item) => (
             <a
               key={item.href}
@@ -37,16 +63,19 @@ export function SiteHeader() {
           ))}
         </nav>
 
-        <a
-          href={whatsappLink(site.hero.whatsappMessage)}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex min-h-11 items-center gap-2 bg-action-primary px-5 label-caps text-xs text-action-on-primary transition-colors duration-200 hover:bg-action-primary-hover"
-        >
-          <MessageCircle aria-hidden="true" className="size-4" />
-          <span className="hidden sm:inline">WhatsApp</span>
-          <span className="sr-only sm:hidden">Message us on WhatsApp</span>
-        </a>
+        <div className="flex items-center gap-1">
+          <a
+            href={whatsappLink(site.hero.whatsappMessage)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hidden min-h-11 items-center gap-2 bg-action-primary px-5 label-caps text-xs text-action-on-primary transition-colors duration-200 hover:bg-action-primary-hover lg:inline-flex"
+          >
+            <MessageCircle aria-hidden="true" className="size-4" />
+            WhatsApp
+          </a>
+
+          <MobileNav items={site.nav} whatsappHref={whatsappLink(site.hero.whatsappMessage)} />
+        </div>
       </div>
     </header>
   );

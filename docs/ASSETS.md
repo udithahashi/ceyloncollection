@@ -15,7 +15,20 @@ Model choice follows the same instruction:
 | Work                                     | Model             |
 | ---------------------------------------- | ----------------- |
 | Photographic, realistic, textile, people | `nano_banana_pro` |
-| Icons, UI graphics, anything with text   | `gpt_image_2`     |
+| Icons, UI graphics, poster artwork       | `gpt_image_2`     |
+
+**Character shots go through `nano_banana_pro`, not a Soul model.** The workspace
+has a trained Soul, "Maya Onelz"
+(`162d4995-6ce8-42ca-803c-848f51768972`, type `soul_cinematic`), and the obvious
+route is `soul_cinematic --custom_reference_id`. The owner's judgement after
+comparing both: Soul Cinema is weaker at character than Nano Banana Pro. So Maya
+is generated once through the Soul to establish her likeness, and that image is
+then passed as `--image-references` to `nano_banana_pro` for every real shot.
+Identity from the Soul, rendering from the better model.
+
+`reference/generated-raw/maya-nbp.png` is that anchor image. Every character
+prompt in this file was generated with it as the reference, which is what keeps
+one recognisable person across the whole site.
 
 **The logo is not on this list.** The owner has hired a human designer for the
 mark; `src/app/icon.tsx` is a coded placeholder favicon in the meantime, and
@@ -43,9 +56,9 @@ mark; `src/app/icon.tsx` is a coded placeholder favicon in the meantime, and
    node scripts/build-brand-images.mjs
    ```
 
-   Raw generations are 6-8 MB PNGs. That script resizes each to the size it is
-   actually displayed at (doubled, for retina) and encodes WebP, which took the
-   current set from ~35 MB to ~636 KB.
+   Raw generations are multi-megabyte PNGs. That script resizes each to the size it
+   is actually displayed at (doubled, for retina) and encodes WebP - the current set
+   of thirteen comes to roughly 1.5 MB in total.
 
 `reference/generated-raw/` is gitignored - raw files stay on the machine that made
 them. `public/brand/` is committed and served. A fresh clone therefore has the web
@@ -53,78 +66,109 @@ assets but not the originals, which is why the prompts below are the real record
 
 ## The prompts
 
-Every one of these ran on `nano_banana_pro` at `--resolution 2k`. All five ask for
-no text, no logos and no watermarks, because a generated word in an image cannot be
-translated, corrected, or trusted to be spelled right.
+Thirteen assets. Every one asks for no text, no logos and no watermarks, because a
+generated word in an image cannot be translated, corrected, or trusted to be spelled
+right - and for the offer panels, because the words are rendered as HTML on top.
 
-The house style, common to all of them: soft directional daylight, muted editorial
-colour grade built on the brand's ivory and navy with restrained gold, visible fabric
-texture, generous negative space, calm and unhurried. A heritage textile house, not a
-fast-fashion catalogue.
+The house style, appended to every photographic prompt so the set matches: soft
+diffused daylight, muted editorial colour grade on ivory and deep navy with restrained
+gold, medium format 85mm, shallow depth of field, visible fabric texture and drape,
+quiet and unhurried. A heritage textile house, not fast fashion.
 
-### `hero` - 4:5
+`Ref` marks the shots generated with `--image-references reference/generated-raw/maya-nbp.png`,
+which is what keeps Maya recognisably the same person across the site.
 
-> Editorial fashion photograph for a boutique clothing brand. A South Asian woman in
-> her late twenties wearing an elegant handwoven Sri Lankan silk saree in deep navy
-> with a gold thread border, standing in three-quarter profile in soft diffused
-> daylight beside a cream plastered wall. Natural window light from the left, gentle
-> falloff, calm dignified expression looking slightly away from camera. Shot on medium
-> format, 85mm, shallow depth of field, muted warm colour grade with ivory and navy
-> dominating and restrained gold accents. Fine fabric texture and drape clearly
-> visible. Quiet, refined, unhurried mood - a heritage textile house, not a fast
-> fashion catalogue. No text, no logos, no watermarks, no jewellery clutter.
+| Asset               | Model             | Ratio | Ref  |
+| ------------------- | ----------------- | ----- | ---- |
+| `hero`              | `nano_banana_pro` | 16:9  | Maya |
+| `edit-batik-frock`  | `nano_banana_pro` | 3:4   | Maya |
+| `edit-flower-frock` | `nano_banana_pro` | 3:4   | Maya |
+| `edit-sarong`       | `nano_banana_pro` | 3:4   | Maya |
+| `look-1`            | `nano_banana_pro` | 3:4   | Maya |
+| `look-2`            | `nano_banana_pro` | 3:4   | Maya |
+| `look-3`            | `nano_banana_pro` | 3:4   | Maya |
+| `craft-wax`         | `nano_banana_pro` | 4:3   | -    |
+| `craft-dye`         | `nano_banana_pro` | 4:3   | -    |
+| `detail-batik`      | `nano_banana_pro` | 4:3   | -    |
+| `offer-delivery`    | `gpt_image_2`     | 3:2   | -    |
+| `offer-loyalty`     | `gpt_image_2`     | 3:2   | -    |
+| `offer-seasonal`    | `gpt_image_2`     | 3:2   | -    |
 
-### `loom` - 4:3
+### `hero` - 16:9
 
-> Documentary photograph of a traditional Sri Lankan handloom in a hill country
-> weaving workshop. Close three-quarter view of the wooden loom with warp threads
-> stretched in navy and gold, a weaver's hands mid-motion passing the shuttle, face
-> not visible. Soft natural light through an open shutter, dust motes in the air, worn
-> timber and cotton thread texture. Warm muted colour grade, ivory and deep navy,
-> restrained gold highlights. Respectful, documentary, unstaged. No text, no logos, no
-> watermarks.
+> Wide editorial fashion photograph for a boutique Sri Lankan clothing brand. She stands at the RIGHT THIRD of the frame, full length, wearing a hand-dyed batik frock in deep indigo and warm gold with the wax-resist pattern clearly visible. The LEFT TWO THIRDS is a calm empty cream plastered wall with generous negative space for text overlay. Looking away from camera, composed. Soft diffused natural daylight, muted warm editorial colour grade with ivory and deep navy dominant and restrained gold. Medium format, 85mm, shallow depth of field. Fabric texture and drape clearly rendered. Quiet, refined, unhurried - a heritage textile house, not fast fashion. No text, no logos, no watermarks.
 
-Faces are deliberately excluded here. An invented face attached to a claim about
-real artisans would be a small lie in the middle of the page that is about honesty.
+### `edit-batik-frock` - 3:4
 
-### `edit-saree` - 4:5
+> Editorial fashion photograph for a boutique Sri Lankan clothing brand. She wears a hand-dyed batik frock in deep indigo and warm gold, the wax-resist pattern clearly visible across the fabric, knee-length with a soft A-line skirt and short sleeves. Standing full-length in three-quarter view beside a cream plastered wall, soft diffused morning daylight from the left, gentle shadow falloff. Calm, composed expression, looking slightly away from camera. Medium format, 85mm, shallow depth of field. Muted warm colour grade, ivory and deep navy dominant with restrained gold. Fabric texture, drape and batik crackle detail clearly rendered. Quiet, refined, unhurried - a heritage textile house, not fast fashion. No text, no logos, no watermarks.
 
-> Still life product photograph of a folded handwoven Sri Lankan silk saree in deep
-> navy with a fine gold thread border, arranged on a pale cream linen surface.
-> Overhead three-quarter angle, soft directional daylight raking across the fabric to
-> reveal weave texture and sheen. Minimal composition, generous negative space, muted
-> editorial colour grade in ivory and navy. Boutique heritage textile catalogue. No
-> text, no logos, no watermarks, no hands, no people.
+### `edit-flower-frock` - 3:4
 
-### `edit-occasion` - 4:5
+> Editorial fashion photograph. She wears a Sri Lankan flower frock - a knee-length cotton dress in a small hand-printed floral pattern, dusty rose and blush on cream, with a fitted bodice and gathered skirt. Three-quarter view, standing beside a cream plastered wall. Soft diffused natural daylight, muted warm editorial colour grade with ivory and deep navy dominant and restrained gold. Medium format, 85mm, shallow depth of field. Fabric texture and drape clearly rendered. Quiet, refined, unhurried - a heritage textile house, not fast fashion. No text, no logos, no watermarks.
 
-> Still life product photograph of an elegant occasion-wear frock in dusty rose and
-> blush fabric, softly draped over a pale cream surface with the skirt falling
-> naturally. Soft directional daylight, gentle shadows, visible fabric texture and
-> delicate embroidery detail at the neckline. Minimal composition, generous negative
-> space, muted editorial colour grade in ivory, blush and rose. Boutique catalogue. No
-> text, no logos, no watermarks, no hands, no people.
+### `edit-sarong` - 3:4
 
-### `edit-everyday` - 4:5
+> Editorial fashion photograph. She wears a Sri Lankan batik sarong wrapped as a long skirt in indigo and gold wax-resist pattern, paired with a simple fitted cream cotton blouse. Full length, three-quarter view, standing beside a cream plastered wall, one hand resting at the wrap. Soft diffused natural daylight, muted warm editorial colour grade with ivory and deep navy dominant and restrained gold. Medium format, 85mm, shallow depth of field. Fabric texture and drape clearly rendered. Quiet, refined, unhurried - a heritage textile house, not fast fashion. No text, no logos, no watermarks.
 
-> Still life product photograph of a stack of neatly folded lightweight cotton and
-> batik fabrics in warm gold, ochre and cream tones, on a pale cream linen surface.
-> Overhead three-quarter angle, soft directional daylight, visible hand-block batik
-> print detail and cotton weave texture. Minimal composition, generous negative space,
-> muted editorial colour grade. Boutique heritage textile catalogue. No text, no
-> logos, no watermarks, no hands, no people.
+### `look-1` - 3:4
+
+> Editorial fashion photograph, seated. She wears a hand-dyed batik frock in indigo and gold on a simple wooden chair beside an open shuttered window, soft light across the fabric, looking out of frame. Soft diffused natural daylight, muted warm editorial colour grade with ivory and deep navy dominant and restrained gold. Medium format, 85mm, shallow depth of field. Fabric texture and drape clearly rendered. Quiet, refined, unhurried - a heritage textile house, not fast fashion. No text, no logos, no watermarks.
+
+### `look-2` - 3:4
+
+> Editorial fashion photograph, walking. She wears a flowing Sri Lankan flower frock in blush and cream, mid-stride along a shaded colonnade, skirt caught in motion, natural movement. Soft diffused natural daylight, muted warm editorial colour grade with ivory and deep navy dominant and restrained gold. Medium format, 85mm, shallow depth of field. Fabric texture and drape clearly rendered. Quiet, refined, unhurried - a heritage textile house, not fast fashion. No text, no logos, no watermarks.
+
+### `look-3` - 3:4
+
+> Close editorial detail photograph from the shoulders down, no face in frame. Hands adjusting the waist of a batik sarong in indigo and gold, wax-resist pattern and cotton weave in sharp detail. Soft diffused natural daylight, muted warm editorial colour grade with ivory and deep navy dominant and restrained gold. Medium format, 85mm, shallow depth of field. Fabric texture and drape clearly rendered. Quiet, refined, unhurried - a heritage textile house, not fast fashion. No text, no logos, no watermarks.
+
+### `craft-wax` - 4:3
+
+> Documentary photograph of Sri Lankan batik making. Close view of a craftsperson's hands drawing hot wax with a small copper tjanting tool onto stretched white cotton, tracing a fine floral pattern. Wax pot and brushes on a worn timber bench, warm light through a shuttered window. Face not visible. Respectful, unstaged documentary. Soft diffused natural daylight, muted warm editorial colour grade with ivory and deep navy dominant and restrained gold. Medium format, 85mm, shallow depth of field. Fabric texture and drape clearly rendered. Quiet, refined, unhurried - a heritage textile house, not fast fashion. No text, no logos, no watermarks.
+
+### `craft-dye` - 4:3
+
+> Documentary photograph of Sri Lankan batik dyeing. Wet indigo-dyed cotton cloth being lifted dripping from a deep dye vat by gloved hands, deep blue running down the fabric, steam and wet stone floor. Face not visible. Rich indigo against warm timber and cream walls. Respectful, unstaged documentary. Soft diffused natural daylight, muted warm editorial colour grade with ivory and deep navy dominant and restrained gold. Medium format, 85mm, shallow depth of field. Fabric texture and drape clearly rendered. Quiet, refined, unhurried - a heritage textile house, not fast fashion. No text, no logos, no watermarks.
+
+### `detail-batik` - 4:3
+
+> Extreme macro photograph of finished Sri Lankan batik cotton. Fills the frame with the wax-resist pattern in deep indigo and warm gold, the characteristic fine crackle veining where wax cracked and dye seeped through clearly visible, individual cotton fibres in focus. Raking side light. Soft diffused natural daylight, muted warm editorial colour grade with ivory and deep navy dominant and restrained gold. Medium format, 85mm, shallow depth of field. Fabric texture and drape clearly rendered. Quiet, refined, unhurried - a heritage textile house, not fast fashion. No text, no logos, no watermarks.
+
+### `offer-delivery` - 3:2
+
+> Abstract decorative background panel inspired by Sri Lankan batik wax-resist patterning. Deep navy ground with fine warm gold linear motifs and characteristic batik crackle veining, arranged sparsely toward the edges leaving the CENTRE LARGELY EMPTY and calm for text to be placed over it later. Flat graphic treatment, elegant, restrained, no photorealism. Absolutely no text, no letters, no numbers, no logos, no watermarks.
+
+### `offer-loyalty` - 3:2
+
+> Abstract decorative background panel inspired by Sri Lankan batik wax-resist patterning. Dusty rose and blush ground with fine cream and soft gold floral motifs and batik crackle veining, arranged sparsely toward the edges leaving the CENTRE LARGELY EMPTY and calm for text to be placed over it later. Flat graphic treatment, elegant, restrained, no photorealism. Absolutely no text, no letters, no numbers, no logos, no watermarks.
+
+### `offer-seasonal` - 3:2
+
+> Abstract decorative background panel inspired by Sri Lankan batik wax-resist patterning. Warm gold and ivory ground with fine deep navy linear motifs and batik crackle veining, arranged sparsely toward the edges leaving the CENTRE LARGELY EMPTY and calm for text to be placed over it later. Flat graphic treatment, elegant, restrained, no photorealism. Absolutely no text, no letters, no numbers, no logos, no watermarks.
+
+The three craft shots deliberately exclude faces. An invented face attached to a
+claim about real artisans would be a small lie in the middle of the section that is
+about honesty.
+
+The offer panels are deliberately empty in the centre. That space is where the HTML
+text sits - see `src/features/site/components/offers.tsx` for why no wording is baked
+into the artwork.
 
 ## What these images are, and are not
 
 They are **art direction, not inventory.** Nothing here is a photograph of stock the
 business owns - there is no stock table yet, and no product catalogue. The site they
 illustrate asks people what they are looking for; it does not offer them a specific
-saree at a specific price.
+frock at a specific price.
 
-That distinction is why the collection tiles are still lifes of fabric rather than
-numbered products with prices, and it is worth preserving. The moment a generated
-image sits next to a real price and a Buy button, it stops being art direction and
-starts being a claim about a thing that does not exist.
+That distinction is worth preserving. The moment a generated image sits next to a real
+price and a Buy button, it stops being art direction and starts being a claim about a
+thing that does not exist. It also means the model is a generated likeness, not a
+customer or an employee, and nothing on the page says otherwise.
+
+**What is in frame is what the business actually sells:** batik frocks, flower frocks
+and sarongs. An earlier version of this set was built around sarees, which the business
+does not sell - if the focus shifts again, these images shift with it.
 
 ## Still to make
 

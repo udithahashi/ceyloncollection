@@ -20,6 +20,13 @@ import '../globals.css';
  * is what swaps the entire palette, the corner radii, the shadow treatment and
  * the three editorial typefaces in one go - see `src/lib/theme/tokens.ts`.
  */
+
+/**
+ * EVERY PAGE UNDER THIS LAYOUT MUST RENDER DYNAMICALLY. See the long note in
+ * `(public)/page.tsx` for why, and copy the `await connection()` line into any
+ * new public page. A prerendered page here ships with no CSP nonce and the
+ * browser refuses all of its JavaScript.
+ */
 export const metadata: Metadata = {
   metadataBase: new URL(env.APP_URL),
   title: {

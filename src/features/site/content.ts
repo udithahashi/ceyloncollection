@@ -2,31 +2,45 @@
  * Everything the public site says, in one place.
  *
  * Copy as data rather than scattered through JSX, because this is the text most
- * likely to be corrected by the owner - a phone number, a claim, a category name -
- * and hunting it across six components is how a site ends up saying two different
- * things in two places.
+ * likely to be corrected by the owner - a phone number, a discount, a category
+ * name - and hunting it across ten components is how a site ends up saying two
+ * different things in two places.
  *
- * NO `server-only` HERE, ON PURPOSE. This module is imported by client components
- * for the animated sections, so it must stay free of anything that reaches
- * `@/lib/env` - the trap documented at length in AGENTS.md and CONCEPTS.md. Plain
- * strings and numbers only. If something here ever needs a formatted date, format
- * it on the server and pass the string in.
+ * NO `server-only` HERE, ON PURPOSE. This module is imported by client
+ * components for the animated sections, so it must stay free of anything that
+ * reaches `@/lib/env` - the trap documented at length in AGENTS.md and
+ * CONCEPTS.md. Plain strings and numbers only.
  *
  * WHAT THIS SITE IS, WHICH GOVERNS EVERY LINE BELOW
- * It is not a shop. There is no product table, no stock, no prices, no basket -
- * see docs/HANDOVER.md. The business finds out what people want, then sources it
- * on the next buying trip. So the site's whole job is to start a WhatsApp
- * conversation that arrives in the leads system, and every claim it makes has to
- * be one the business can actually keep today.
+ * It is not a shop. There is no product table, no stock, no prices, no basket.
+ * The business finds out what people want, then sources it on the next buying
+ * trip. So the site's whole job is to start a WhatsApp conversation that lands
+ * in the leads system, and every claim it makes has to be one the business can
+ * keep today.
  *
- * The reference design at reference/public-website.html is the visual source of
- * truth and NOT the copy source: it was written for a Colombo boutique selling
- * finished stock in LKR with island-wide delivery. This is a Qatar import
- * business serving Sri Lankan families, so prices, places and promises all differ.
+ * WHAT IT SELLS, AND WHAT IT DOES NOT
+ * Three things, and only three: batik frocks, flower frocks, and sarongs. All
+ * three exist as real subcategories in `src/db/seed/taxonomy-data.ts`, so an
+ * enquiry from this page files cleanly against the taxonomy the back office
+ * already uses. **Sarees are deliberately absent** - the business does not sell
+ * them yet, and an earlier revision of this file advertised them by mistake.
  */
 
-/** The business's WhatsApp number, in the form `wa.me` expects: digits only. */
+/**
+ * PLACEHOLDER. The real business number goes here before launch.
+ * Digits only, no `+`, which is the form `wa.me` expects.
+ */
 export const WHATSAPP_NUMBER = '97450000000';
+
+/**
+ * Marks a commercial figure nobody has confirmed yet.
+ *
+ * Discounts and delivery thresholds are promises the business has to keep, so
+ * they are never invented here. Every one renders as an obvious blank the owner
+ * has to fill, and `TODO_FIGURE` makes them greppable - see the launch-blocker
+ * note in docs/HANDOVER.md.
+ */
+export const TODO_FIGURE = '___';
 
 /**
  * A `wa.me` deep link with the message pre-filled.
@@ -39,90 +53,176 @@ export function whatsappLink(message: string): string {
   return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
 }
 
+const ASK = 'Hello Ceylon Collection.';
+
 export const site = {
   name: 'Ceylon Collection',
-  tagline: 'Sri Lankan clothing, sourced for Qatar',
+  tagline: 'Sri Lankan batik, sourced for Qatar',
 
-  announcement: 'Sourced to order from Sri Lanka · Delivered across Qatar',
+  announcement: `Free delivery across Qatar on orders over QAR ${TODO_FIGURE}`,
 
   nav: [
     { label: 'What we bring', href: '#collections' },
+    { label: 'The craft', href: '#craft' },
     { label: 'How it works', href: '#how' },
-    { label: 'Our craft', href: '#craft' },
-    { label: 'Ask for a piece', href: '#enquire' },
+    { label: 'Offers', href: '#offers' },
   ],
 
   hero: {
-    eyebrow: 'Ceylon Collection',
-    // Split so the italic word can be styled without dangerouslySetInnerHTML.
-    titleBefore: 'The saree you cannot find',
-    titleEmphasis: 'here',
-    titleAfter: '',
-    body: 'Handloom sarees, occasion wear and everyday cotton, chosen in Sri Lanka and brought to families in Qatar. Tell us what you are looking for and we will find it on the next trip.',
+    eyebrow: 'Hand-dyed in Sri Lanka',
+    titleBefore: 'The batik you',
+    titleEmphasis: 'cannot',
+    titleAfter: 'find here',
+    body: 'Batik frocks, flower frocks and sarongs, chosen by hand in Sri Lanka and brought to families in Qatar. Tell us what you are looking for — we will find it on the next trip.',
     primaryCta: 'Ask on WhatsApp',
     secondaryCta: 'See what we bring',
-    // The pre-filled first message. Deliberately a prompt, not a greeting.
-    whatsappMessage:
-      "Hello Ceylon Collection. I'm looking for something specific — can you help me find it?",
-    imageAlt:
-      'A woman in a navy handloom saree with a gold thread border, standing in soft daylight',
-    caption: 'Handloom cotton-silk, gold thread border',
+    whatsappMessage: `${ASK} I'm looking for something specific — can you help me find it?`,
+    imageAlt: 'A woman in a hand-dyed indigo and gold batik frock, standing in soft daylight',
+    scrollCue: 'Scroll',
   },
 
-  /** The scrolling strip under the hero. Short, true, and about the service. */
   marquee: [
+    'Hand-dyed batik',
     'Sourced to order',
-    'Handloom from Sri Lanka',
     'Delivered across Qatar',
-    'Ask for any size',
+    'Any size, just ask',
     'Family-run',
   ],
 
+  /**
+   * The reassurance strip. Two of the three carry a figure nobody has confirmed,
+   * so they render with `TODO_FIGURE` rather than a number somebody invented.
+   */
+  benefits: [
+    {
+      icon: 'truck',
+      title: 'Free delivery in Qatar',
+      body: `On every order over QAR ${TODO_FIGURE}. Anywhere from Doha to Al Shamal.`,
+    },
+    {
+      icon: 'scissors',
+      title: 'Made and picked to order',
+      body: 'Nothing is bought in bulk and pushed. We buy what you actually asked for.',
+    },
+    {
+      icon: 'heart',
+      title: 'Regulars pay less',
+      body: `${TODO_FIGURE}% off from your ${TODO_FIGURE} order onward. We remember who you are.`,
+    },
+  ],
+
+  statement: {
+    eyebrow: 'Why we exist',
+    // Split into lines so each can be revealed behind its own mask.
+    lines: [
+      'We do not guess what',
+      'you want and hope it',
+      'sells. You tell us,',
+      'and we go and find it.',
+    ],
+    body: 'Most of what we bring back started as somebody sending us a photo and asking whether it was possible.',
+  },
+
   collections: {
     eyebrow: 'What we bring',
-    title: 'Three things people ask us for most',
-    body: 'Not a catalogue — a starting point. If what you want is not here, it is still worth asking, because most of what we source began as somebody describing it to us.',
+    title: 'Three things, done properly',
+    body: 'We are not trying to carry everything. These are what people in Qatar keep asking us for, and what we know how to source well.',
     items: [
       {
-        slug: 'saree',
-        eyebrow: 'Handloom',
-        title: 'Sarees',
-        body: 'Cotton, cotton-silk and silk handloom from the hill country, in the weights that actually work for Doha weather.',
-        image: '/brand/edit-saree.webp',
-        imageAlt: 'A folded navy handloom saree with a gold thread border on cream linen',
-        whatsappMessage: "Hello Ceylon Collection. I'm looking for a handloom saree.",
+        slug: 'batik-frock',
+        index: '01',
+        eyebrow: 'Hand-dyed',
+        title: 'Batik frocks',
+        body: 'Wax-resist dyed by hand, so no two are identical. Cotton weights that survive a Doha summer.',
+        image: '/brand/edit-batik-frock.webp',
+        imageAlt: 'A hand-dyed batik frock in indigo and gold',
+        whatsappMessage: `${ASK} I'm looking for a batik frock.`,
       },
       {
-        slug: 'occasion',
-        eyebrow: 'Occasion',
-        title: 'Frocks & party wear',
-        body: 'Occasion wear for weddings, Avurudu and family functions, in adult and children’s sizes.',
-        image: '/brand/edit-occasion.webp',
-        imageAlt: 'An occasion frock in dusty rose and blush, softly draped on a cream surface',
-        whatsappMessage: "Hello Ceylon Collection. I'm looking for occasion wear.",
+        slug: 'flower-frock',
+        index: '02',
+        eyebrow: 'Printed',
+        title: 'Flower frocks',
+        body: 'The small-print floral frocks people grew up with, in adult and children’s sizes.',
+        image: '/brand/edit-flower-frock.webp',
+        imageAlt: 'A Sri Lankan flower frock in blush and cream',
+        whatsappMessage: `${ASK} I'm looking for a flower frock.`,
       },
       {
-        slug: 'everyday',
+        slug: 'sarong',
+        index: '03',
         eyebrow: 'Everyday',
-        title: 'Cotton & batik',
-        body: 'Light cotton and hand-block batik for every day — the pieces people ask us to bring back two and three at a time.',
-        image: '/brand/edit-everyday.webp',
-        imageAlt: 'Folded cotton and batik fabrics in gold, ochre and cream tones',
-        whatsappMessage: "Hello Ceylon Collection. I'm looking for everyday cotton or batik.",
+        title: 'Sarongs',
+        body: 'Batik, handloom and plain — worn at home, on the beach, or wrapped as a skirt.',
+        image: '/brand/edit-sarong.webp',
+        imageAlt: 'A batik sarong in indigo and gold, wrapped as a long skirt',
+        whatsappMessage: `${ASK} I'm looking for a sarong.`,
       },
     ],
   },
 
+  lookbook: {
+    eyebrow: 'Lookbook',
+    title: 'Recent pieces',
+    body: 'A few of the things we have brought back. Ask about anything you see — or send a photo of something you have seen elsewhere.',
+    items: [
+      {
+        image: '/brand/look-1.webp',
+        alt: 'Seated, wearing a batik frock beside a shuttered window',
+        caption: 'Batik frock',
+      },
+      {
+        image: '/brand/look-2.webp',
+        alt: 'Walking in a flowing flower frock along a shaded colonnade',
+        caption: 'Flower frock',
+      },
+      {
+        image: '/brand/look-3.webp',
+        alt: 'Close detail of hands adjusting a batik sarong at the waist',
+        caption: 'Batik sarong',
+      },
+    ],
+    cta: 'Ask about a piece',
+    whatsappMessage: `${ASK} I saw a piece on your site I'd like to ask about.`,
+  },
+
   /**
-   * The honest explanation of a sourcing business, and the section that does the
-   * most work on this page. Someone who expects to click Buy needs to understand
-   * within one screen why there is no Buy button, or they leave thinking the site
-   * is broken rather than that the model is different.
+   * The batik process, and the section that earns the brand its claim. Real
+   * craft, described accurately: wax-resist dyeing, not weaving.
    */
+  craft: {
+    eyebrow: 'The craft',
+    title: 'Wax, dye, and a great deal of patience',
+    body: 'Batik is not printed. The pattern is drawn in hot wax, the cloth is dyed around it, and the wax is boiled away to reveal what was protected. Repeat for every colour. The fine cracks in the pattern are where wax broke and dye crept in — the mark of the real thing, not a flaw.',
+    steps: [
+      {
+        number: '01',
+        title: 'Drawn in wax',
+        body: 'Hot wax is traced onto raw cotton with a tjanting, by hand, one line at a time.',
+        image: '/brand/craft-wax.webp',
+        imageAlt: 'Hands drawing hot wax onto stretched white cotton with a copper tjanting',
+      },
+      {
+        number: '02',
+        title: 'Dyed around it',
+        body: 'The cloth goes into the dye. Everything the wax covered stays as it was.',
+        image: '/brand/craft-dye.webp',
+        imageAlt: 'Indigo-dyed cotton being lifted from a dye vat',
+      },
+      {
+        number: '03',
+        title: 'Boiled clean',
+        body: 'The wax is boiled out and the pattern appears, crackle and all.',
+        image: '/brand/detail-batik.webp',
+        imageAlt: 'Macro detail of finished batik showing the characteristic crackle veining',
+      },
+    ],
+  },
+
   how: {
     eyebrow: 'How it works',
     title: 'You describe it. We find it.',
-    body: 'We do not hold a warehouse of stock. We buy against what people have actually asked for, which is why we can find the specific thing rather than sell you the nearest thing.',
+    body: 'We do not hold a warehouse. We buy against what people have actually asked for, which is why we can find the specific thing rather than sell you the nearest thing.',
     steps: [
       {
         number: '01',
@@ -132,7 +232,7 @@ export const site = {
       {
         number: '02',
         title: 'We source it in Sri Lanka',
-        body: 'We take your request to the weavers and markets we buy from, and come back to you with what is actually available, and what it costs in QAR.',
+        body: 'We take your request to the batik houses and markets we buy from, and come back with what is actually available and what it costs in QAR.',
       },
       {
         number: '03',
@@ -142,18 +242,45 @@ export const site = {
     ],
   },
 
-  craft: {
-    eyebrow: 'Our craft',
-    title: 'Woven by hand, before it was ever a trend',
-    body: 'Sri Lankan handloom is a working craft, not a heritage exhibit — small weaving houses in the hill country, dyeing and warping and weaving to order the way they always have. Buying against real requests is what lets us keep going back to them.',
-    imageAlt:
-      'A traditional Sri Lankan handloom with navy and gold warp threads, a weaver passing the shuttle',
-    // Facts about the service, deliberately not invented production statistics.
-    // "9,000+ pieces woven" would be a lie this business cannot currently back.
-    stats: [
-      { value: 'Made to order', label: 'Nothing mass-bought' },
-      { value: 'Qatar-wide', label: 'Delivered locally' },
-      { value: 'Family-run', label: 'You talk to us directly' },
+  /**
+   * Offers. Every figure is a placeholder on purpose - see TODO_FIGURE.
+   * The artwork behind each card is generated; all of this text is real HTML.
+   */
+  offers: {
+    eyebrow: 'Offers',
+    title: 'Worth knowing before you ask',
+    body: 'Straightforward, and applied on WhatsApp when we quote you — there is no code to remember.',
+    items: [
+      {
+        slug: 'delivery',
+        kicker: 'Delivery',
+        headline: 'Free across Qatar',
+        detail: `On orders over QAR ${TODO_FIGURE}. Below that, delivery is a flat QAR ${TODO_FIGURE}.`,
+        image: '/brand/offer-delivery.webp',
+        tone: 'navy',
+        cta: 'Ask about delivery',
+        whatsappMessage: `${ASK} Can you tell me about delivery?`,
+      },
+      {
+        slug: 'loyalty',
+        kicker: 'Regulars',
+        headline: `${TODO_FIGURE}% off, always`,
+        detail: `From your ${TODO_FIGURE} order onward, on everything. No card, no points — we already know your number.`,
+        image: '/brand/offer-loyalty.webp',
+        tone: 'rose',
+        cta: 'Ask about the discount',
+        whatsappMessage: `${ASK} I've ordered before — can you tell me about the regulars' discount?`,
+      },
+      {
+        slug: 'seasonal',
+        kicker: 'Seasonal',
+        headline: `${TODO_FIGURE}% off for Avurudu`,
+        detail: `On orders placed before ${TODO_FIGURE}. Ask early — the buying trip fills up.`,
+        image: '/brand/offer-seasonal.webp',
+        tone: 'gold',
+        cta: 'Ask about the offer',
+        whatsappMessage: `${ASK} I'd like to ask about the seasonal offer.`,
+      },
     ],
   },
 
@@ -162,33 +289,33 @@ export const site = {
     title: 'What are you looking for?',
     body: 'Send a photo or just describe it. We will tell you honestly whether we can find it, roughly what it will cost, and when the next trip is.',
     cta: 'Start on WhatsApp',
-    whatsappMessage:
-      "Hello Ceylon Collection. I'm looking for something specific — can you help me find it?",
+    whatsappMessage: `${ASK} I'm looking for something specific — can you help me find it?`,
     note: 'We reply to messages ourselves, usually the same day.',
   },
 
   footer: {
     blurb:
-      'Sri Lankan clothing, sourced to order for families in Qatar. Handloom sarees, occasion wear and everyday cotton.',
+      'Hand-dyed Sri Lankan batik, flower frocks and sarongs, sourced to order for families in Qatar.',
     columns: [
       {
         heading: 'What we bring',
         links: [
-          { label: 'Sarees', href: '#collections' },
-          { label: 'Frocks & party wear', href: '#collections' },
-          { label: 'Cotton & batik', href: '#collections' },
+          { label: 'Batik frocks', href: '#collections' },
+          { label: 'Flower frocks', href: '#collections' },
+          { label: 'Sarongs', href: '#collections' },
         ],
       },
       {
         heading: 'About',
         links: [
+          { label: 'The craft', href: '#craft' },
           { label: 'How it works', href: '#how' },
-          { label: 'Our craft', href: '#craft' },
+          { label: 'Offers', href: '#offers' },
         ],
       },
       {
         heading: 'Talk to us',
-        links: [{ label: 'WhatsApp', href: whatsappLink('Hello Ceylon Collection.') }],
+        links: [{ label: 'WhatsApp', href: whatsappLink(ASK) }],
       },
     ],
     location: 'Doha, Qatar',
