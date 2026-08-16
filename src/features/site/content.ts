@@ -77,7 +77,12 @@ export const site = {
     primaryCta: 'Ask on WhatsApp',
     secondaryCta: 'See what we bring',
     whatsappMessage: `${ASK} I'm looking for something specific — can you help me find it?`,
-    imageAlt: 'A woman in a hand-dyed indigo and gold batik frock, standing in soft daylight',
+    // Describes the photograph currently in `public/brand/hero.webp`. If that
+    // file is swapped for a different garment, this line has to move with it -
+    // alt text that describes the previous image is worse than none, because a
+    // screen reader states it as fact and a search engine indexes it as one.
+    imageAlt:
+      'A woman in a floral-print frock in blush, gold and green, standing in soft daylight against a cream wall',
     scrollCue: 'Scroll',
   },
 

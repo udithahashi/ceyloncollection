@@ -176,3 +176,28 @@ does not sell - if the focus shifts again, these images shift with it.
   data) and 404/500 artwork. Not started, and worth asking the owner first whether
   these should wait for the same designer doing the logo.
 - Category tiles for the wider taxonomy, if the public site ever grows a browse page.
+
+## Replacing an image by hand
+
+Drop your own file straight into `public/brand/` under the same name. Two things
+will otherwise waste your afternoon, and both have already happened once.
+
+**The page keeps showing the old picture.** Next.js caches every optimised
+variant it has produced, keyed by the URL - and the URL did not change, so it
+serves the cached copy of the file you just replaced. Stop the dev server, delete
+the caches, start it again:
+
+```bash
+rm -rf .next/dev/cache/images .next/cache/images
+```
+
+**`build-brand-images.mjs` used to overwrite your file.** It now refuses to touch
+any asset whose checksum does not match `public/brand/.generated.json` - the
+record of what the script itself last wrote. Anything it does not recognise is
+treated as yours and preserved, and it says so when it skips one. Use `--force`
+only when you genuinely want the generated version back.
+
+**Update the alt text.** Every image's description lives in
+`src/features/site/content.ts`. Alt text that describes the previous photograph is
+worse than none, because a screen reader states it as fact and a search engine
+indexes it as one.
