@@ -25,7 +25,19 @@ export const DEFAULT_REDIRECT = '/admin';
  * Paths that are never a sensible destination, because landing on them after
  * sign-in would immediately bounce the user somewhere else.
  */
-const NEVER_REDIRECT_TO = ['/login', '/two-factor', '/setup-two-factor', '/accept-invite'];
+export const NEVER_REDIRECT_TO = [
+  '/login',
+  '/two-factor',
+  '/setup-two-factor',
+  // `/accept-invitation`, not `/accept-invite`. The shorter spelling was here
+  // for a long time and matched nothing, because `startsWith('/accept-invite/')`
+  // is false for `/accept-invitation` - so the one page in this list that most
+  // obviously should not be a post-login destination was the one page still
+  // reachable as one. Harmless in practice (it rejects a missing token), but the
+  // entry was decorative. `safe-redirect.test.ts` now asserts every entry here is
+  // a real page, so a rename cannot quietly hollow this list out again.
+  '/accept-invitation',
+];
 
 /**
  * Returns `target` if it is a safe same-site path, otherwise the default.
