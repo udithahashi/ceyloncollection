@@ -113,6 +113,14 @@ Not built yet:
 - **Public site beyond the homepage.** `/` is built and is one long editorial scroll.
   There is no second page — no about, no journal, no browse. The nav is anchor links
   within that page, and there IS now a full-screen mobile drawer (`mobile-nav.tsx`).
+- **The public site's visual design is not signed off.** The owner's verdict on the
+  current homepage: it does not look professional. Structure, copy, imagery pipeline
+  and motion plumbing are all in place and working; what is missing is the design
+  itself — type scale, spacing rhythm, composition, colour weighting. Deliberately
+  parked to come back to, not abandoned. Two things to fix while you are in there:
+  the headline still says "The batik you cannot find here" over a photograph of a
+  flower frock, and `public/brand/edit-batik-frock2.webp` is an unreferenced
+  byte-identical duplicate that can be deleted.
 - **Money, stock, orders.** Declared in `src/features/analytics/boards.ts` and shown as
   planned. No tables, no queries.
 
