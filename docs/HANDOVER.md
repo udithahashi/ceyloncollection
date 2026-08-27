@@ -119,6 +119,18 @@ Not built yet:
   `public/brand/` — a new shoot (Maya, Skyler, Viana, plus a male character,
   officewear and knits) was started via the Higgsfield CLI and is not finished.
   `public/brand/edit-batik-frock2.webp` is still an unreferenced duplicate.
+
+  The rebuild itself is committed as of `b943541`. It had spent a long time staged in
+  the index but never committed, which meant `main` - and so every deploy - was serving
+  the previous Cormorant/Jost design while the working tree showed the new one. If a
+  design change ever seems not to reach a deployment, check `git show HEAD:<file>`
+  before checking anything else.
+
+  `public/brand/test/` is git-ignored on purpose: 160MB of unreferenced scratch renders
+  from the brand image scripts. Git keeps blobs forever and the Hostinger build clones
+  the repo under a 15-minute cap, so those bytes would have been paid for on every
+  deploy. Finished assets belong one level up, in `public/brand/`.
+
 - **The public site's visual design is not signed off.** The previous homepage
   was cleared and rebuilt from scratch around අපේ කම. Needs the owner's eyes
   in a real browser, including motion (the automated pane cannot verify GSAP).
