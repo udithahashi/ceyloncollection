@@ -267,6 +267,12 @@ the push from Step 1 actually arrived.
 The app will start and then fail to reach the database. That is expected - Phase 2 is
 next. **Phase 1 is done when the build is green.**
 
+> **Confirmed working, 2026-08-28.** The open worry with this route was whether Next's
+> WebAssembly compiler would finish inside Hostinger's 15-minute per-phase build limit,
+> since a native Turbopack build of this app takes 17 seconds. It does. The public site
+> came up over HTTPS with fonts, CSS and images all serving, which also proves
+> `scripts/prepare-standalone.mjs` ran - an unstyled page is the symptom when it has not.
+
 ---
 
 ## Phase 2 - PostgreSQL on the VPS
