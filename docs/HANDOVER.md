@@ -55,7 +55,7 @@ npm run dev           # http://localhost:3000
 `git log` is the honest history — every commit message explains the reasoning behind
 that change, so `git log -p` on a feature is often faster than reading the files cold.
 
-**State of `npm run verify` as of this revision:** typecheck, lint, and all 601 tests
+**State of `npm run verify` as of this revision:** typecheck, lint, and all 607 tests
 pass. The one thing `verify` will flag that is not a project problem: `format:check`
 fails on files under the untracked `.agents/` and `VibeSec-Skill/` directories (Claude
 Code skill installs, not part of this codebase) — ignore those, they are not tracked by

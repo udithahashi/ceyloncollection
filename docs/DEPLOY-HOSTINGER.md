@@ -120,11 +120,58 @@ Two changes in `package.json`:
   command field offers `npm run build` and nothing else, so `npm run build` has to be the
   command that does everything.
 
-**Step 1.** Commit and push both, from your PC:
+### 1.2b The second failure: Next's own compiler
 
-```bash
-git add package.json package-lock.json scripts/prepare-standalone.mjs docs/
-git commit -m "Make the build survive a host that cannot compile native modules"
+Fixing the install exposes the same root cause one layer up:
+
+```
+⚠ Attempted to load @next/swc-linux-x64-gnu, but an error occurred:
+  /lib64/libm.so.6: version `GLIBC_2.29' not found
+⨯ Failed to load next.config.ts
+Error: Cannot find module '.../6a90bda0b22e0.next.config'
+```
+
+Hostinger's build host has **glibc 2.28**. Next 16's native binary needs **2.29**. The
+musl build is not a way out - `@next/swc-linux-x64-musl` declares `libc: ["musl"]`, so
+npm will not install it on a glibc host. Next falls back to its WebAssembly compiler,
+and the wasm compiler cannot compile a TypeScript `next.config.ts`, which is what that
+second error is: a temp file that was never written.
+
+Three more changes, all committed:
+
+- **`next.config.ts` became `next.config.mjs`.** Node imports it directly, so nothing has
+  to compile it. The cost is that it can no longer import `MAX_UPLOAD_TOTAL_BYTES` from
+  `src/lib/images/limits.ts`, so that number is restated - and
+  `tests/next-config.test.ts` fails if the two ever disagree.
+- **`npm run build` now goes through `scripts/build.mjs`.** Turbopack is native-only and
+  has no WebAssembly build, so on this host the build must pass `--webpack`. That flag is
+  opt-in via `NEXT_BUILD_WEBPACK=1` rather than applied everywhere, so a developer's
+  machine, CI and the Docker image keep Turbopack. **Be aware this host builds with a
+  different bundler from the one CI verifies** - it is the first place to look if a
+  bundler-shaped problem ever appears.
+- **`outputFileTracingExcludes` added.** `src/lib/storage/index.ts` builds an upload path
+  from a runtime value, and its `turbopackIgnore` comments only speak to Turbopack. On
+  the webpack path nothing suppresses the file tracer, and it starts copying `.agents/`,
+  `brandkit/`, `reference/` and the rest into the deployed server - 743 files that will
+  never be read. The excludes stop it.
+
+> On Windows this last one still prints `⚠ Failed to copy traced files ... EPERM`.
+> That is a local quirk: Next passes the exclude patterns to picomatch as an array, and
+> the array form does not match Windows backslash paths. Verified that the same patterns
+> do match POSIX paths, which is what runs on Hostinger. Ignore it locally.
+
+**Step 1.** Commit and push, from your PC. Note `next.config.ts` is deleted and
+`next.config.mjs` replaces it, so `git add` both:
+
+```powershell
+git add package.json package-lock.json next.config.ts next.config.mjs scripts/ tests/next-config.test.ts AGENTS.md docs/
+```
+
+```powershell
+git commit -m "Build on a host whose glibc cannot load Next's native compiler"
+```
+
+```powershell
 git push origin main
 ```
 
@@ -167,6 +214,7 @@ pulls in `@/lib/env`, which validates the lot before the build can finish.
 | `STORAGE_LOCAL_DIR`  | `/home/u475358938/domains/ceyloncollection.qa/uploads`                                               |
 | `LOG_LEVEL`          | `info`                                                                                               |
 | `HUSKY`              | `0`                                                                                                  |
+| `NEXT_BUILD_WEBPACK` | `1`                                                                                                  |
 
 Generate each secret separately, on your PC:
 

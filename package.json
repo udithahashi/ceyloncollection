@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "next dev",
     "dev:pretty": "next dev | pino-pretty --translateTime SYS:HH:MM:ss --ignore pid,hostname,app",
-    "build": "next build && node scripts/prepare-standalone.mjs",
+    "build": "node scripts/build.mjs",
     "start": "next start",
     "doctor": "node scripts/doctor.mjs",
     "setup": "node scripts/setup.mjs",

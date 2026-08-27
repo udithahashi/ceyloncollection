@@ -15,6 +15,8 @@ Its job is to capture leads from social media, understand demand, and later mana
 stock, costs and shipping. There is no public-facing website yet.
 
 Read `docs/CONCEPTS.md` for the architecture and `docs/LOCAL-DEV.md` for commands.
+Read `docs/BUSINESS.md` for the business itself - what it sells, to whom, how an
+order actually happens, and the four things the brand's voice will not say.
 
 **If you are new to this repository, start with `docs/HANDOVER.md`.** It carries the
 current state, the remaining plan, the traps that have already cost time, and the two
@@ -45,7 +47,15 @@ These have already caused mistakes. Check them before writing code.
   Actions prefer `updateTag(tag)`, which expires and refreshes in the same request
   so the user sees their own write immediately.
 - **`next lint` no longer exists.** Run `npm run lint`, which calls ESLint directly.
-- Turbopack is the default for both `dev` and `build`.
+- Turbopack is the default for both `dev` and `build`, and `npm run build` goes through
+  `scripts/build.mjs` to keep it that way. The one exception is a host whose glibc is too
+  old to load `@next/swc-<platform>` at all: setting `NEXT_BUILD_WEBPACK=1` there falls
+  back to `next build --webpack`, because Turbopack is native-only and has no WebAssembly
+  build. Do not set that variable anywhere the native binary loads.
+- **`next.config` is `.mjs`, not `.ts`, and must stay that way.** Next compiles a
+  TypeScript config with the native binary before reading it, so on that same host a
+  `.ts` config fails before the build starts. The cost is that the config cannot import
+  from `src/`; `tests/next-config.test.ts` guards the one constant that duplicates.
 - `next dev` writes to `.next/dev`, so a dev server and a build can run at once.
 
 ## Non-negotiable rules
