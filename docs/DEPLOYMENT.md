@@ -4,6 +4,13 @@ How the production stack fits together, how to deploy and update it, and how to 
 the backups actually work. For what the pieces _are_ and why, see
 [CONCEPTS.md](CONCEPTS.md). For local development, see [LOCAL-DEV.md](LOCAL-DEV.md).
 
+This document describes **one VPS running everything in Docker**, which is the intended
+deployment and the only one the repository is built around. There is an alternative the
+owner asked about: the app on Hostinger's managed Node.js hosting, with PostgreSQL and
+Redis left on the VPS. [DEPLOY-HOSTINGER.md](DEPLOY-HOSTINGER.md) covers it, including
+the three things that split gives up. Read that file's opening section before choosing
+between them.
+
 ## The stack
 
 Five containers, defined in [`docker/compose.prod.yml`](../docker/compose.prod.yml):

@@ -13,16 +13,18 @@ them that way — it is a deliberate house style, not decoration.
 
 ## Read these, in this order
 
-| Order | Document                                      | What you get                                              |
-| ----- | --------------------------------------------- | --------------------------------------------------------- |
-| 1     | `AGENTS.md`                                   | The non-negotiable rules. Nine of them. Do not break them |
-| 2     | This file                                     | State, plan, traps, and where the last session stopped    |
-| 3     | [docs/CONCEPTS.md](CONCEPTS.md)               | The architecture and the reasoning behind every choice    |
-| 4     | [docs/LOCAL-DEV.md](LOCAL-DEV.md)             | Day-to-day commands                                       |
-| 5     | [docs/DEPLOYMENT.md](DEPLOYMENT.md)           | The production stack, deploys, backups, the restore drill |
-| 6     | [docs/TROUBLESHOOTING.md](TROUBLESHOOTING.md) | When something breaks                                     |
-| 7     | [docs/GLOSSARY.md](GLOSSARY.md)               | Any term you or the owner does not recognise              |
-| 8     | [docs/ORIGINAL-PLAN.md](ORIGINAL-PLAN.md)     | Optional. The pre-Phase-0 plan this project started from  |
+| Order | Document                                        | What you get                                               |
+| ----- | ----------------------------------------------- | ---------------------------------------------------------- |
+| 1     | `AGENTS.md`                                     | The non-negotiable rules. Nine of them. Do not break them  |
+| 2     | This file                                       | State, plan, traps, and where the last session stopped     |
+| 3     | [docs/CONCEPTS.md](CONCEPTS.md)                 | The architecture and the reasoning behind every choice     |
+| 4     | [docs/LOCAL-DEV.md](LOCAL-DEV.md)               | Day-to-day commands                                        |
+| 5     | [docs/DEPLOYMENT.md](DEPLOYMENT.md)             | The production stack, deploys, backups, the restore drill  |
+| 5b    | [docs/DEPLOY-HOSTINGER.md](DEPLOY-HOSTINGER.md) | Only if the app is hosted on Hostinger rather than the VPS |
+| 6     | [docs/TROUBLESHOOTING.md](TROUBLESHOOTING.md)   | When something breaks                                      |
+| 7     | [docs/GLOSSARY.md](GLOSSARY.md)                 | Any term you or the owner does not recognise               |
+| 8     | [docs/ORIGINAL-PLAN.md](ORIGINAL-PLAN.md)       | Optional. The pre-Phase-0 plan this project started from   |
+| 9     | [docs/BUSINESS.md](BUSINESS.md)                 | The business, not the code: what it sells, to whom, how    |
 
 `CLAUDE.md` simply points at `AGENTS.md`, so both Claude Code and Cursor read the same
 rules. There is no second source of truth to keep in step.
@@ -65,24 +67,24 @@ Migrations through `0006_cloudy_rhino` are applied.
 
 Built, working, committed:
 
-| Area                  | State                                                                                                                          |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| Local dev environment | Docker PostgreSQL 17 + Redis 7, `npm run setup`, `npm run doctor`, wait-for-db, secret-scanning pre-commit hook                |
-| Configuration         | Zod-validated `@/lib/env`, `server-only`-guarded. Pino logger with redaction. `@/lib/time` for the Qatar timezone              |
-| Design system         | Theme tokens for `public`, `admin-dark`, `admin-light`; SSR theme switch with no flash; contrast asserted vs WCAG AA           |
-| Auth                  | Better Auth, invite-only, TOTP two-factor, four roles, permission table in `@/lib/auth/roles`, activity log                    |
-| Taxonomy              | Ten lists, 389 seeded values, full CRUD with reorder/retire/restore, one page serves all ten via a registry                    |
-| Leads and customers   | Schema, list with filters, detail, edit, status changer, `customer_summary` view, E.164 phone identity                         |
-| Spreadsheet import    | `/admin/leads/import`: dry-run report per row, duplicate detection, no invented taxonomy values, safe to re-upload             |
-| Lead photos           | Upload, re-encode via sharp (EXIF stripped), thumbnails, `/lead-images/[id]/[variant]`, delete removes the file                |
-| Analytics             | Boards, not one dashboard. Demand board built with Chart.js; money, stock and orders declared as planned                       |
-| Demo data             | `npm run db:demo` invents ~140 leads; `npm run db:demo -- clear` removes them                                                  |
-| n8n intake            | `POST /n8n/intake` (bearer token or HMAC), staging table `lead_intake`, review queue at `/admin/intake`. Setup: `LOCAL-DEV.md` |
-| CI                    | `.github/workflows/ci.yml` Build step has the env vars `@/lib/env` needs at import time; was silently red before               |
-| Deployment            | `Dockerfile`, `docker/compose.prod.yml`, GHCR publish in CI, nightly backup + restore drill. See `docs/DEPLOYMENT.md`          |
-| Activity log page     | `/admin/activity`, `activityLog:read`-gated, filter by action, paginated                                                       |
-| Dev-only design page  | `/admin/dev/design` - the old dashboard showcase, `notFound()` in production                                                   |
-| Public website        | `/` - batik-led editorial homepage, GSAP + Lenis motion, mobile drawer nav, offers. See `docs/ASSETS.md`                       |
+| Area                  | State                                                                                                                                                      |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Local dev environment | Docker PostgreSQL 17 + Redis 7, `npm run setup`, `npm run doctor`, wait-for-db, secret-scanning pre-commit hook                                            |
+| Configuration         | Zod-validated `@/lib/env`, `server-only`-guarded. Pino logger with redaction. `@/lib/time` for the Qatar timezone                                          |
+| Design system         | Theme tokens for `public`, `admin-dark`, `admin-light`; SSR theme switch with no flash; contrast asserted vs WCAG AA                                       |
+| Auth                  | Better Auth, invite-only, TOTP two-factor, four roles, permission table in `@/lib/auth/roles`, activity log                                                |
+| Taxonomy              | Ten lists, 389 seeded values, full CRUD with reorder/retire/restore, one page serves all ten via a registry                                                |
+| Leads and customers   | Schema, list with filters, detail, edit, status changer, `customer_summary` view, E.164 phone identity                                                     |
+| Spreadsheet import    | `/admin/leads/import`: dry-run report per row, duplicate detection, no invented taxonomy values, safe to re-upload                                         |
+| Lead photos           | Upload, re-encode via sharp (EXIF stripped), thumbnails, `/lead-images/[id]/[variant]`, delete removes the file                                            |
+| Analytics             | Boards, not one dashboard. Demand board built with Chart.js; money, stock and orders declared as planned                                                   |
+| Demo data             | `npm run db:demo` invents ~140 leads; `npm run db:demo -- clear` removes them                                                                              |
+| n8n intake            | `POST /n8n/intake` (bearer token or HMAC), staging table `lead_intake`, review queue at `/admin/intake`. Setup: `LOCAL-DEV.md`                             |
+| CI                    | `.github/workflows/ci.yml` Build step has the env vars `@/lib/env` needs at import time; was silently red before                                           |
+| Deployment            | `Dockerfile`, `docker/compose.prod.yml`, GHCR publish in CI, nightly backup + restore drill. See `docs/DEPLOYMENT.md`                                      |
+| Activity log page     | `/admin/activity`, `activityLog:read`-gated, filter by action, paginated                                                                                   |
+| Dev-only design page  | `/admin/dev/design` - the old dashboard showcase, `notFound()` in production                                                                               |
+| Public website        | Editorial fashion house: `/`, `/collections`, `/pieces`, `/journal`, `/about`. Data-driven catalogue, WhatsApp enquire, GSAP + Lenis. See `docs/ASSETS.md` |
 
 **The URL layout changed, and it is the first thing to know.** The back office now
 lives under `/admin`, because the public site wanted the bare domain. `/admin`,
@@ -110,17 +112,16 @@ Not built yet:
 - **Brand assets.** No real logo — the owner has hired a human designer for it, so this
   is no longer an AI-generation task; see §2. `src/app/icon.tsx` is a coded placeholder
   favicon, not a designed asset. No empty-state illustrations yet either.
-- **Public site beyond the homepage.** `/` is built and is one long editorial scroll.
-  There is no second page — no about, no journal, no browse. The nav is anchor links
-  within that page, and there IS now a full-screen mobile drawer (`mobile-nav.tsx`).
-- **The public site's visual design is not signed off.** The owner's verdict on the
-  current homepage: it does not look professional. Structure, copy, imagery pipeline
-  and motion plumbing are all in place and working; what is missing is the design
-  itself — type scale, spacing rhythm, composition, colour weighting. Deliberately
-  parked to come back to, not abandoned. Two things to fix while you are in there:
-  the headline still says "The batik you cannot find here" over a photograph of a
-  flower frock, and `public/brand/edit-batik-frock2.webp` is an unreferenced
-  byte-identical duplicate that can be deleted.
+- **Public site photography is mid-rebuild.** The information architecture and
+  pages exist (`/`, `/collections`, `/collections/[slug]`, `/pieces/[slug]`,
+  `/journal`, `/about`). Typography is now Fraunces / Manrope / Outfit, colours
+  unchanged. Campaign photography still uses the previous Higgsfield set in
+  `public/brand/` — a new shoot (Maya, Skyler, Viana, plus a male character,
+  officewear and knits) was started via the Higgsfield CLI and is not finished.
+  `public/brand/edit-batik-frock2.webp` is still an unreferenced duplicate.
+- **The public site's visual design is not signed off.** The previous homepage
+  was cleared and rebuilt from scratch around අපේ කම. Needs the owner's eyes
+  in a real browser, including motion (the automated pane cannot verify GSAP).
 - **Money, stock, orders.** Declared in `src/features/analytics/boards.ts` and shown as
   planned. No tables, no queries.
 
@@ -251,6 +252,23 @@ charts to the demand board — that separation is the point of the boards struct
 
 ### 5. Smaller pending items
 
+- ~~Public site was double-compressing photos.~~ **Done.** Every `<Image>` in
+  `public/brand/` on the public site now sets `quality={95}`, not just the homepage
+  hero. Next's default is `quality={75}` when the prop is omitted, and every one of
+  these photos is already a hand-compressed WebP, so the default was a second lossy
+  pass on top of a deliberate first one - the same problem the hero image's
+  `quality={95}` was already fixing, just not applied everywhere. Confirmed via the
+  `/_next/image` request in the browser network tab: `q=95`, not `q=75`.
+  **Not done, and worth doing properly rather than hardcoding a second number:** an
+  admin setting to control this per-deployment - a quality/percentage the owner can
+  raise or lower without a code change, plus perhaps a toggle for whether resizing
+  runs at all. Next.js requires the allowed values to be declared statically in
+  `next.config.ts`'s `images.qualities` at build time (`next.config.ts` currently
+  lists `[75, 90, 95, 100]`); a runtime setting could not add a value outside that
+  list without a rebuild, so the honest version of this feature is a dropdown
+  constrained to values already declared there, stored in whatever settings table
+  the back office ends up using, and read where these `<Image>` components render.
+  Nobody has designed that table yet - this is a note for when someone does.
 - ~~Trim the dashboard.~~ **Done.** The "Design foundations" showcase moved to
   `/admin/dev/design` (`src/app/(back-office)/admin/dev/design/page.tsx`), gated on
   `isProductionDeployment` from `@/lib/env` rather than a permission - it is not
@@ -283,10 +301,40 @@ charts to the demand board — that separation is the point of the boards struct
   scroll slowly, then turn on the OS "reduce motion" setting and reload — with it on,
   every section must be immediately visible and static, never blank.
 
-## The public site cannot launch until these two are real
+## The footer's policy pages, and what is still blank in them
 
-Both live in `src/features/site/content.ts`, and both are deliberate blanks rather
-than guesses.
+`/policies/[slug]` serves five pages from `src/features/site/policies.ts`: how to order,
+delivery, returns, privacy and terms. They exist because the footer links to them, and a
+footer that 404s is worse than a footer with no policy links at all — so links and pages
+ship together. Add a link to `site.footer.columns` only alongside the page it opens.
+
+**Nothing in them invents a commitment.** A return window, a delivery charge, a retention
+period and a registered company name are promises the business has to keep, so they are
+NOT written as plausible defaults. Each policy carries a `pending` array naming what the
+owner still has to decide, and the page renders that as one visible "Still being settled"
+notice with a WhatsApp link. Empty the array and the notice disappears by itself.
+
+This is deliberately NOT the `TODO_FIGURE` treatment used for the offer figures. `___`
+works beside a label and fails inside prose: "we accept returns within ___ days" still
+reads as a returns policy, and the opening half of that sentence is an admission on its
+own. Naming the open questions in one block says exactly what is and is not decided.
+
+What IS written is true of the system as built and is checkable: the public site sets no
+cookies and loads no third-party trackers (verified — grep for `gtag|fbq|plausible|posthog`
+under `(public)`), enquiries arrive over WhatsApp, the back office files them by phone
+number. The privacy policy also states the deletion behaviour accurately rather than
+conveniently: **photographs are deleted outright, written enquiry records are soft-deleted**
+— so it says the record is "retired" and that a dated note is kept, because promising
+deletion where the code soft-deletes would be a lie a customer could hold us to.
+
+**Terms still to settle**, all in `policies.ts`: return window, condition and carriage;
+delivery areas, times and cost; how long a retired enquiry record is kept; the registered
+business name; and the country whose law the terms sit under.
+
+## The public site cannot launch until these three are real
+
+All three live in `src/features/site/content.ts`, and all three are deliberate
+blanks rather than guesses.
 
 1. **The WhatsApp number.** `WHATSAPP_NUMBER` is `97450000000`. Every call to
    action on the page points at it.
@@ -296,6 +344,98 @@ than guesses.
    blank on purpose: a discount is a promise the business has to keep, and
    inventing one would be the same mistake as inventing "9,000+ pieces woven"
    would have been. Fill them in, or delete the offers section.
+3. **How long the house has been bringing pieces over.** The homepage's house
+   panel (`site.house.stats.years`) shows the same `___`. The other two figures
+   beside it are not blanks and never will be: they are `collections.length` and
+   `pieces.length`, counted from `catalog.ts` at render time so they cannot drift
+   from the catalogue. This one has no source in the code because it is a fact
+   about the business. Fill it in, or drop that third item from `houseFigures` in
+   `src/app/(public)/page.tsx` — a two-figure row is honest, an invented year
+   count is not.
+
+## Social channels, and the admin page they are waiting for
+
+`src/features/site/social.ts` holds Instagram, Facebook and WhatsApp as **data** -
+`{ platform, label, href }` - and `SocialLinks` renders whatever is in that array. They
+appear in the header row on desktop, in the mobile drawer, and in the footer.
+
+**The marks are the official Simple Icons outlines, pasted in, and that is deliberate.**
+The first attempt built them from rectangles, circles and freehand strokes; they were
+unrecognisable, because a brand mark is a specific shape people match against memory and
+"close enough" reads as broken. `lucide-react` - already a dependency - is not an option
+here: it dropped brand icons. Take any fourth channel's path from the same source rather
+than drawing it, keep the 24x24 viewBox the paths are authored on, and keep them filled
+rather than stroked.
+
+**They were in the navy announcement strip first, and that was wrong.** The reasoning -
+social links carry a "leave this site" signal, so keep them below the hero's two calls to
+action - still holds, and the header row still separates them from `Enquire` with a
+hairline rule for that reason. But 18px of blush on navy was effectively invisible.
+Subordinate is not the same as unfindable.
+
+**The next step, and the reason the data is shaped this way: move these into a back
+office settings page** so the owner can edit links, names and ordering, and add or
+retire a channel, without a deploy. The component contract is already the row shape a
+table would return - `platform`, `label`, `href`, plus an `order` column - so the work
+is the table, the CRUD and swapping the array for a query. `platform` is a closed union
+feeding a `Record<SocialPlatform, ...>` icon map on purpose: a channel added without a
+mark drawn for it is a type error rather than a hole in the page. That is the one part
+a settings page cannot make fully dynamic - a brand new platform still needs its icon
+committed - so plan the UI as "choose a platform, set the link", not a free text field.
+
+**The three hrefs are placeholders** pointing at the platforms' own home pages, in the
+same state as `WHATSAPP_NUMBER`. WhatsApp's is built from that constant rather than
+written out, so filling the number in fixes the icon too. Real profiles are needed
+before launch or these are three links to nowhere.
+
+**Why they are not in the hero.** Social icons carry a strong "leave this site" signal
+and compete directly with a conversion action when placed beside one. The hero exists to
+drive `View collections` and `Start a conversation`; three exits next to those buttons
+would bid against the two things the page is for. Subordinate placement is the decision,
+not an oversight - do not "improve" this by promoting them into the hero copy column.
+
+## The page chrome is 8.3125rem, and it has already drifted once
+
+`site-shell.tsx` states the header's exact height and the homepage hero subtracts it
+twice - `min-h-[calc(100dvh-8.3125rem)]` on the hero section and on its image column -
+so the two together fill exactly one screen.
+
+It was 7.6875rem (123px) when the announcement strip was 30px. Sizing that strip's type
+up for legibility made it 40px, and the hero went on subtracting ten pixels that no
+longer existed. **Nothing looked broken; the fold was just quietly wrong**, which is why
+it survived several passes. It is now 133px and measured.
+
+If you touch the strip's type, its padding, or put anything in it, measure
+`document.querySelector('header').getBoundingClientRect().height` in a real browser and
+move the number in `site-shell.tsx` and both `calc()` values together. The social icons
+briefly lived in that strip and had to be positioned absolutely to avoid growing it a
+second time - they are in the header row now, where a 44px target costs nothing because
+the row is already 93px tall.
+
+## The arrivals rail: why it is not a carousel
+
+`ScrollRail` (`src/features/site/components/scroll-rail.tsx`) carries the New arrivals
+row: native horizontal scroll, CSS snap, hidden scrollbar, prev/next buttons on the
+heading row. Three alternatives were considered and rejected on evidence, and the
+component's own comment records the detail - **read it before replacing this with a
+carousel library.**
+
+- **A pinned GSAP horizontal section** is scroll-jacking. It hangs the viewport for
+  anyone tabbing through, and Lenis plus ScrollTrigger is a documented source of tweens
+  that never finish after an anchor jump - and every link on this site is an anchor.
+  GSAP's own position is that ScrollTrigger was built deliberately not to jack scroll.
+- **Auto-advancing** contradicts the research: roughly 1% of people interact with a
+  carousel at all, most of those only ever seeing the first slide, and the movement
+  costs comprehension. It also pulls in WCAG 2.2.2 (Pause, Stop, Hide).
+- **Hiding the scrollbar alone** removes an affordance without replacing it. The buttons
+  and the deliberate sliver of the next tile at the right edge are that replacement;
+  they are not decoration, so do not "tidy" either away.
+
+Two things that look optional and are not: the `<ul>` carries `tabIndex={0}` and a
+label because a hidden scrollbar strips keyboard access from a scroll container (axe
+calls this `scrollable-region-focusable`), and the buttons scroll by a **measured**
+tile-plus-gap rather than a hardcoded width, so the step stays correct across
+breakpoints. The rail scrolls without JavaScript; the buttons are an enhancement on top.
 
 ## Traps that have already caught someone
 
@@ -310,6 +450,44 @@ dev`. The fix is `await connection()` from `next/server` at the top of the page 
 and note that **`export const dynamic = 'force-dynamic'` is not enough**; the route
 still reported `x-nextjs-prerender: 1` and served a nonce-less shell. Any new page
 under `(public)` needs the same line.
+
+**A `fromTo` writes its start values the moment you CREATE it, not when the playhead
+reaches it.** GSAP's `immediateRender` defaults to true, which is right for a lone tween
+and wrong for every sequenced one. Building the hero's rotation timeline stamped
+`opacity: 0` onto every target up front - including the resting word and the resting
+photograph, because the last step of the loop cycles back to index 0 - so the hero
+rendered with no picture and its headline parked below its own mask, and recovered only
+seconds later when the first tween happened to reveal it. Nothing threw. Any `fromTo`
+added to a paused or sequenced timeline needs `immediateRender: false`.
+
+**A mask's padding makes its two exits asymmetrical.** `SplitReveal` pads each line mask
+by `0.18em` for Fraunces' italic swash descenders, against `0.92` leading. A word
+therefore sits flush with the mask's top and has 0.18em of mask left under it: clearing
+upward costs 100% of the word's height, clearing downward costs (0.92 + 0.18) / 0.92, or
+119.6%. The symmetrical ±110 that looks obviously correct leaves an 8px band of the
+incoming word visible at the bottom of the mask before it moves. Both terms are `em`, so
+the ratio holds at every breakpoint - see `ENTER_FROM` / `EXIT_TO` in `hero-rotation.tsx`.
+
+**GSAP deletes Tailwind's `translate` when it animates an element, and nothing warns
+you.** Tailwind v4 compiles `-translate-x-1/2` to the standalone `translate:` CSS
+property, not to `transform:`. GSAP writes `translate: none; rotate: none; scale: none`
+onto anything it tweens, so that it owns the matrix outright - which silently throws
+away any Tailwind centring on the same element the moment the first frame runs. It
+looks correct in the markup, correct in DevTools before the tween, and wrong only
+after the animation fires. `ClosingRule` hit this: the mark's left corner landed on
+the join instead of its middle. The fix is structural, not a class order - put the
+positioning on an outer element and give GSAP an inner one. Anywhere a `Reveal` or
+`SplitReveal` className grows a `translate-*` utility, the same thing will happen.
+
+**A dead HMR socket leaves Tailwind's CSS stale, and only NEW class names notice.**
+If `ws://localhost:3000/_next/hmr` fails in the console, the dev server keeps serving
+the stylesheet it generated when it started. Existing utilities all still work, so the
+page looks fine - but any arbitrary value you have just written for the first time
+(`text-[clamp(...)]`, `max-w-[36rem]`, `right-[calc(...)]`) is simply absent from the
+sheet and the element silently falls back to its inherited value. It reads exactly
+like "Tailwind cannot parse this", and it is not; a reload does not fix it because the
+server, not the browser, is holding the old CSS. Restart the dev server. Check for the
+socket error before you go rewriting a class that was correct all along.
 
 **`pkill` does not work here, so you can end up testing a stale server.** Git Bash's
 `pkill -f "next start"` reports success and leaves the process running, which means
@@ -334,6 +512,41 @@ are not. The same applies to CSS transitions. Markup, layout, tap targets and
 accessibility are all verifiable; how the motion _feels_ is not. Do not report
 animation as verified from here, and do not "fix" a stuck opacity that is only stuck
 because the pane is hidden.
+
+A corollary that cost time on its own: **in that pane, "playing but frozen" and
+"waiting for a scroll that never came" are indistinguishable.** Both leave the element
+at its `from` values. A hero line parked at `translateY(110%)` reads identically
+whether its tween started or its ScrollTrigger never fired, so a reveal bug cannot be
+confirmed or cleared by looking at computed transforms here. What _is_ verifiable is
+the decision the code makes before the tween exists - measure the element with
+`getBoundingClientRect()` and check it against the trigger line yourself. That is how
+the two reveal bugs below were actually found.
+
+**The reveal components start their content hidden in the HTML, which changes what a
+missed trigger costs.** `Reveal` ships `opacity-0 translate-y-7` and `SplitReveal`
+ships `translate-y-[110%]` on every line, both matching the tween's `from` values, so
+that server-rendered content does not flash visible before hydration and then animate
+in. The trade is that a trigger which never fires no longer leaves un-animated text -
+it leaves a permanent blank, and for `SplitReveal` an empty space where a headline
+should be, because the mask clips the parked line out of its own box. Two consequences
+worth keeping in mind: the tweens must stay `gsap.fromTo()` (a `.from()` infers its end
+state from the current computed style, which is now the hidden one, so it would animate
+hidden-to-hidden), and `clearProps` must stay off the tween (it would hand control back
+to the static hidden class after the animation finished). Both traps are documented at
+length in the files themselves.
+
+**`start: 'top 85%'` left visible text invisible, and it was not only the hero.** Any
+element sitting between 85% of the viewport and the fold is plainly on screen and was
+still waiting for a scroll event to reveal it - and with the static hidden classes
+above, waiting meant blank. The hero hit it hardest because its copy column can run
+taller than its own `min-h-[calc(100dvh-7.6875rem)]` (measured at 934px against a 777px
+floor on a 1440x900 window - a min-height is a floor, not a cap), which pushed the
+primary call to action past the trigger line entirely. Both `Reveal` and `SplitReveal`
+now measure the element on mount and skip ScrollTrigger for anything already on screen;
+`onLoad` remains as an explicit override the hero uses. Below-the-fold content is
+untouched and still waits for the scroll. **If you add a reveal and its content is
+blank on load, check where its top sits relative to the viewport before suspecting
+GSAP.**
 
 These are the expensive part of this handover. Each cost real time.
 
@@ -447,36 +660,112 @@ Worth respecting; it came up explicitly.
 
 ## Where the last session stopped
 
-The final commit is `72f4fff`, "Give the Build step the env vars it always needed."
-`main` is even with `origin/main` and the tree is clean (aside from untracked Claude
-Code skill-tooling directories that are not part of this codebase). `npm run verify`
-passes in full: typecheck, lint, format, and all 594 tests.
+The public homepage was cleared, then rebuilt as an editorial fashion house
+around අපේ කම. Routes now exist at `/`, `/collections`, `/collections/[slug]`,
+`/pieces/[slug]`, `/journal`, `/journal/[slug]`, and `/about`. Catalogue,
+campaigns and journal copy live in `src/features/site/` as data, not markup.
 
-Everything that was on `feature/n8n-lead-intake` is now merged into `main` — the branch
-is gone, its work landed as ordinary commits: `679312d` (schema, endpoint, review queue,
-the `persist.ts` refactor), `16722e2` (bearer-token support plus the two review-page
-bugs found by browser testing), `b85d1fb` (the pre-existing `range.test.ts` clock bug,
-fixed on its own rather than folded into the intake commits), and `72f4fff` (CI's Build
-step was missing the env vars `@/lib/env` needs at import time — every push had been
-red at Build since Phase 0, not just this branch; `/n8n/intake` just made the gap
-visible for the first time on a PR).
+Public typography changed: Fraunces / Manrope / Outfit (Marcellus remains on
+`BrandMark` only; the logo is still a coded placeholder). Brand colours did not
+change. 605 tests pass. Higgsfield MCP auth was expired; the CLI is signed in
+(ultimate plan) and a character-anchor generation is in flight via
+`scripts/generate-campaign.mjs`. Until those land, pages reuse the previous
+`public/brand/` photographs.
 
-The owner ran a real n8n workflow against the intake endpoint from his own Docker n8n,
-and promote and dismiss were both driven through `/admin/intake`, producing leads 289-291.
-The two bugs that walkthrough exposed are fixed and recorded under "Traps" — both were
-invisible to the type checker and to every test, which is the argument for the browser
-step.
+The owner still needs to look at `/` in a real browser (motion cannot be
+verified from the automated pane), fill `WHATSAPP_NUMBER` and `TODO_FIGURE`,
+and decide whether the new campaign photography should replace the current
+images before anyone calls this signed off.
 
-One design decision was reversed part-way and is worth not re-reversing: **the endpoint
-originally demanded an HMAC signature and now also accepts a plain bearer token.**
-Requiring the signature meant n8n needed a Code node, and n8n's sandbox refuses
-`require('crypto')` unless the container is started with
-`NODE_FUNCTION_ALLOW_BUILTIN=crypto` — which on a managed n8n may not be possible, and
-which makes "add an integration" mean "rebuild the container". That is not a workable
-production story for a solo operator with one VPS. The signature path is still there,
-still tested, and still wins when both credentials are sent. `CONCEPTS.md` states plainly
-what the token gives up and why it is acceptable for an internal-network-only endpoint.
+Since then, on the owner's direction: the hero's accent word is brand rose
+rather than `ink-accent` (legitimate only because that headline is never
+smaller than `3.2rem` — the comment above it explains why the token still
+carries its decorative-only rule), the announcement strip reads "Chosen in
+Sri Lanka · Brought to you with love" in tracked uppercase Outfit at
+`0.2em`, and a new **house panel** sits between the selected pieces and the
+journal: navy ground, a batik detail photograph with an inset hairline
+frame, and three figures. Its shape came from a reference design whose
+version was a craft story — "Woven by hand", 120+ artisans, 9,000+ pieces
+woven. This house imports rather than manufactures, so the copy says
+_chosen_, and the figures are counted from `catalog.ts` rather than typed
+in. Read the comment on `site.house` before editing that copy.
 
-What's left is the owner's to decide, not yours to assume: whether brand assets (§2) or
-deployment (§3) comes next now that the intake work has landed, and the browser
-walkthroughs under "Smaller pending items" that nobody has clicked through yet.
+**The hero headline was overflowing its column on every normal screen, and had been.**
+`that remember` needs about 6.49px of line per px of type. Five columns of the twelve-
+column hero grid, minus `lg:px-10`, gave it 514px at 1440 when it wanted 660 - so the h1
+wrapped into five visual lines instead of three at every width from `lg` up to about
+1776px, and only looked correct on a very wide monitor, which is why it survived review.
+The masks hid it rather than exposing it: each clips per AUTHORED line, so a wrapped line
+reveals two rows of type as one unit and the break reads as a styling choice. The text
+column is now six of twelve and the vw term is `6.2`, measured at **1024**, which is the
+binding case - not at whatever monitor you are reading this on. Re-measure there if the
+headline copy or that column's padding changes.
+
+**The hero headline's last word rotates, and it comes to rest.** `remember` -> `know` ->
+`find`, each paired to a photograph that crossfades with it, then the hero settles back
+on `remember` and stops. Holds decelerate (3.4s, 4.1s, 4.8s) so the stop reads as
+settling rather than as breakage, and the timeline pauses off screen, pauses on a hidden
+tab, and re-arms if someone leaves the hero entirely and comes back. Looping forever with
+a growing delay was considered and rejected: the largest type on the page would never be
+still, the next change could never be anticipated, and indefinite auto-motion alongside
+other content is what WCAG 2.2.2 wants a pause control for.
+
+**The rotating slot is much narrower than it looks - read `site.hero.rotation` before
+adding a word.** It only accepts verbs where THE CLOTHES ACT ON YOU, in the plain
+register the rest of the copy uses. `trust` reverses the relationship, and the manifesto
+already says "The clothes you trust." `love` is exactly the sentimentality the note above
+`site.manifesto` bans. The word must also stay LINE-FINAL in `titleLines`: the slot is
+sized by the longest word and a shorter one simply leaves rag, so a swap never reflows -
+move it mid-line and every swap reflows the headline.
+
+**The hero's three slides, and which files they are.** `hero-1` (ivory, gold, occasion) is
+the resting slide; `hero-2` is menswear - a black formal shirt, in an office - and
+`hero-4` is womenswear. `hero-2` was supplied as `hero-3.webp` and renamed to match its
+slide number. The watercolour-gown shot that used to be `hero-2.webp` was NOT deleted for
+that rename: it is preserved as `hero-gown.webp`, out of the rotation, because nothing
+under `public/brand/` is tracked by git and the rename would have destroyed it with no way
+back. `hero-4` is a placeholder the owner intends to replace - it is a different model in
+a different photographic language - and `hero-3d.webp` is the old AI sample, also awaiting
+replacement. Both are known and neither is urgent.
+
+**Each hero slide carries its own featured-piece card, and that is not decoration.** The
+card is laid over the photograph in the corner, so a reader takes it as a caption on
+whatever is behind it. Rotating the picture without rotating the card left "The Nimali
+frock - a small blush print on cream cotton" sitting over a man in a black shirt. Each
+`site.hero.rotation` entry now names a piece that exists in `catalog.ts` and whose link
+resolves, worded from that entry's own subtitle and description so the hero cannot drift
+from the catalogue. Add a slide, add its piece.
+
+**The parked cards are hidden by `visibility`, and must NOT be given `aria-hidden` or
+`tabIndex`.** Both were tried. They are static server-rendered attributes on elements
+whose visibility moves on a timer, so one swap later the card the visitor can see is the
+one marked hidden and untabbable, while the invisible one is the only thing still
+advertising `tabIndex=0`. `visibility: hidden` already removes an element from the tab
+order and from the accessibility tree, and GSAP's `autoAlpha` keeps it in step on every
+frame - which is why the cards animate on `autoAlpha` and the photographs on plain
+`opacity`.
+
+**"The idea" is now built out of its own argument, and that is the point of it.**
+`content.ts` states the section's claim outright: distance is the only thing between
+the reader and clothing they already trust, and this house closes it. Three versions
+said that in words and laid it out as a headline with a paragraph beside it - a
+section about closing a gap that did not close anything. It now draws it. The
+statement is split in two, the trust at the top left and where the reader is at the
+bottom right, and between them a bronze rule reaches in from either edge of the
+window with a gap in the middle. On scroll the gap closes and the house's mark is on
+the join. The three beats follow as full-window ruled bands, so the whole section
+reads as a manifest rather than as a page with boxes on it.
+
+**Do not close the two halves of the statement back up into one block.** The space
+between them is the distance; the section has nothing left to say without it. The
+reasoning, including why the resting state is the closed rule and why the join is at
+58% rather than 50%, lives on `src/features/site/components/closing-rule.tsx`. That
+component is deliberately not reusable - a second one on the page costs the first its
+meaning.
+
+Several numbers in that section are measured, not chosen, and each carries a comment
+saying so: the statement's `7vw`, the unequal `lg:mt-26 lg:mb-30` around the rule
+(equal margins put the rule 15px low, because line boxes are not ink), and the body's
+`32rem` / `lg:36rem` cap that holds every row to ~70 characters. **Do not "simplify"
+that cap to `ch`.** Manrope's zero is far wider than its lowercase, so `68ch` measured
+out at 87 characters - the unit looks like a character count and is not one.
