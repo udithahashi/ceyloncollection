@@ -16,21 +16,24 @@
  *                 screen, with tabular figures and unambiguous 1/l/I. This is
  *                 the same choice GitHub, Linear and Stripe's dashboard make.
  *
- *   Public site   Cormorant Garamond for headings, Jost for body, Marcellus for
- *                 uppercase labels - the pairing from the reference homepage.
- *                 Editorial, high contrast, unmistakably the brand.
+ *   Public site   Fraunces for display, Manrope for body, Outfit for labels.
+ *                 Fraunces is a soft optical serif - editorial without the
+ *                 costume of a high-contrast Bodoni. Manrope is the readable
+ *                 supporting face (not Inter: that belongs to the tool). Outfit
+ *                 carries the wide uppercase labels. Noto Serif Sinhala is
+ *                 loaded only for the moments of Sinhala the brand actually
+ *                 uses; Marcellus stays exclusively on BrandMark.
  *
  * Which set applies is decided by the theme, not by the component: see the
  * `typeface` group in tokens.ts. All faces load on every page because the
- * <html> element carries the variables, and the cost is small - Inter and Jost
- * are variable fonts, and unused faces are never requested by the browser
- * unless something actually renders in them.
+ * <html> element carries the variables, and unused faces are never requested
+ * by the browser unless something actually renders in them.
  *
  * `display: 'swap'` shows the fallback immediately and swaps when the real face
  * arrives. For an internal tool, text you can read at once beats text that is
  * perfectly styled a moment later.
  */
-import { Cormorant_Garamond, Inter, Jost, Marcellus } from 'next/font/google';
+import { Fraunces, Inter, Manrope, Marcellus, Noto_Serif_Sinhala, Outfit } from 'next/font/google';
 
 /**
  * The back office face. Variable, so every weight from 400 to 700 costs one
@@ -43,23 +46,46 @@ export const fontUi = Inter({
   display: 'swap',
 });
 
-export const fontDisplay = Cormorant_Garamond({
+export const fontDisplay = Fraunces({
   subsets: ['latin'],
   weight: ['400', '500', '600'],
   style: ['normal', 'italic'],
-  variable: '--font-cormorant',
+  variable: '--font-fraunces',
   display: 'swap',
 });
 
-/** Variable font, so every weight from 300 to 600 is available at no extra cost. */
-export const fontBody = Jost({
+/** Variable font, so every weight from 400 to 600 is available at no extra cost. */
+export const fontBody = Manrope({
   subsets: ['latin'],
-  variable: '--font-jost',
+  variable: '--font-manrope',
   display: 'swap',
 });
 
-/** Marcellus ships in a single weight, which is all the label style needs. */
-export const fontLabel = Marcellus({
+export const fontLabel = Outfit({
+  subsets: ['latin'],
+  variable: '--font-outfit',
+  display: 'swap',
+});
+
+/**
+ * Loaded for the handful of Sinhala words the public site actually sets
+ * (අපේ කම, and nothing else by default). Not a theme token - it is a language
+ * face, not a role - so components name the variable directly the same way
+ * BrandMark names Marcellus.
+ */
+export const fontSinhala = Noto_Serif_Sinhala({
+  subsets: ['sinhala'],
+  weight: ['400', '500', '600'],
+  variable: '--font-sinhala',
+  display: 'swap',
+});
+
+/**
+ * Identity only. BrandMark is the one place that names a typeface directly;
+ * the public site's labels no longer use Marcellus, but the wordmark still does
+ * until the designer delivers a real mark.
+ */
+export const fontMark = Marcellus({
   subsets: ['latin'],
   weight: '400',
   variable: '--font-marcellus',
@@ -72,4 +98,6 @@ export const fontVariables = [
   fontDisplay.variable,
   fontBody.variable,
   fontLabel.variable,
+  fontSinhala.variable,
+  fontMark.variable,
 ].join(' ');

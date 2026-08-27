@@ -44,10 +44,16 @@ const manifest = existsSync(MANIFEST) ? JSON.parse(readFileSync(MANIFEST, 'utf8'
 
 /** `width` is the intended CSS width doubled, so the asset is sharp on retina. */
 const ASSETS = [
-  // Full-viewport hero, so it carries the largest budget of the set.
   { name: 'hero', width: 2000 },
 
-  // The three focus categories and the lookbook, all shown in portrait cards.
+  { name: 'flower-frocks', width: 900 },
+  { name: 'galle-wax', width: 900 },
+  { name: 'batik-sarong', width: 900 },
+  { name: 'womens-cotton', width: 900 },
+  { name: 'mens-cotton', width: 900 },
+  { name: 'womens-office', width: 900 },
+  { name: 'mens-office', width: 900 },
+
   { name: 'edit-batik-frock', width: 900 },
   { name: 'edit-flower-frock', width: 900 },
   { name: 'edit-sarong', width: 900 },
@@ -55,16 +61,14 @@ const ASSETS = [
   { name: 'look-2', width: 900 },
   { name: 'look-3', width: 900 },
 
-  // The batik process, shown wide.
   { name: 'craft-wax', width: 1400 },
   { name: 'craft-dye', width: 1400 },
   { name: 'detail-batik', width: 1400 },
 
-  // Offer panels. Artwork only - every word on these is HTML rendered on top,
-  // so nothing here needs to stay legible at large sizes.
   { name: 'offer-delivery', width: 1200 },
   { name: 'offer-loyalty', width: 1200 },
   { name: 'offer-seasonal', width: 1200 },
+  { name: 'offer-april', width: 1200 },
 ];
 
 await mkdir(OUT, { recursive: true });

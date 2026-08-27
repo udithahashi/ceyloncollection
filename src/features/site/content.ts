@@ -1,328 +1,323 @@
 /**
- * Everything the public site says, in one place.
+ * Public-site copy and navigation.
  *
- * Copy as data rather than scattered through JSX, because this is the text most
- * likely to be corrected by the owner - a phone number, a discount, a category
- * name - and hunting it across ten components is how a site ends up saying two
- * different things in two places.
+ * Intentionally not `server-only`. Client components (the header, the mobile
+ * drawer, enquire links) import from here, and anything that touches `@/lib/env`
+ * would pull the config validator into the browser. Phone numbers and figure
+ * placeholders live as plain constants for the same reason.
  *
- * NO `server-only` HERE, ON PURPOSE. This module is imported by client
- * components for the animated sections, so it must stay free of anything that
- * reaches `@/lib/env` - the trap documented at length in AGENTS.md and
- * CONCEPTS.md. Plain strings and numbers only.
- *
- * WHAT THIS SITE IS, WHICH GOVERNS EVERY LINE BELOW
- * It is not a shop. There is no product table, no stock, no prices, no basket.
- * The business finds out what people want, then sources it on the next buying
- * trip. So the site's whole job is to start a WhatsApp conversation that lands
- * in the leads system, and every claim it makes has to be one the business can
- * keep today.
- *
- * WHAT IT SELLS, AND WHAT IT DOES NOT
- * Three things, and only three: batik frocks, flower frocks, and sarongs. All
- * three exist as real subcategories in `src/db/seed/taxonomy-data.ts`, so an
- * enquiry from this page files cleanly against the taxonomy the back office
- * already uses. **Sarees are deliberately absent** - the business does not sell
- * them yet, and an earlier revision of this file advertised them by mistake.
+ * A discount is a promise. Commercial figures stay as `TODO_FIGURE` until the
+ * owner fills them - inventing one would be the same mistake as inventing a
+ * heritage claim. Sample campaign copy in `campaigns.ts` is marked fictional
+ * so it can be swapped for backend-driven offers later.
  */
 
-/**
- * PLACEHOLDER. The real business number goes here before launch.
- * Digits only, no `+`, which is the form `wa.me` expects.
- */
 export const WHATSAPP_NUMBER = '97450000000';
 
-/**
- * Marks a commercial figure nobody has confirmed yet.
- *
- * Discounts and delivery thresholds are promises the business has to keep, so
- * they are never invented here. Every one renders as an obvious blank the owner
- * has to fill, and `TODO_FIGURE` makes them greppable - see the launch-blocker
- * note in docs/HANDOVER.md.
- */
 export const TODO_FIGURE = '___';
 
-/**
- * A `wa.me` deep link with the message pre-filled.
- *
- * Pre-filling matters more than it looks: an empty chat window asks the customer
- * to compose the first message, and a good share of them close it instead. It
- * also means the enquiry arrives with some structure rather than "hi".
- */
 export function whatsappLink(message: string): string {
   return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
 }
 
-const ASK = 'Hello Ceylon Collection.';
+export type NavItem = {
+  href: string;
+  label: string;
+};
 
 export const site = {
   name: 'Ceylon Collection',
-  tagline: 'Sri Lankan batik, sourced for Qatar',
-
-  announcement: `Free delivery across Qatar on orders over QAR ${TODO_FIGURE}`,
-
+  markPending: 'Mark arriving',
   nav: [
-    { label: 'What we bring', href: '#collections' },
-    { label: 'The craft', href: '#craft' },
-    { label: 'How it works', href: '#how' },
-    { label: 'Offers', href: '#offers' },
-  ],
+    { href: '/collections', label: 'Collections' },
+    { href: '/journal', label: 'Journal' },
+    { href: '/about', label: 'The house' },
+  ] satisfies NavItem[],
+  enquire: {
+    label: 'Enquire',
+    message: 'Hello — I would like to look at a few pieces from Ceylon Collection.',
+  },
+  /**
+   * The strip above the header.
+   *
+   * Deliberately states what the house does, not what it will give you. The
+   * reference design put an offer here ("complimentary tailoring on all bridal
+   * orders"), and an offer is a promise - it does not go on every page of the
+   * site until someone has decided the business can keep it. Facts can.
+   */
+  announcement: 'Chosen in Sri Lanka · Brought to you with love',
 
   hero: {
-    eyebrow: 'Hand-dyed in Sri Lanka',
-    titleBefore: 'The batik you',
-    titleEmphasis: 'cannot',
-    titleAfter: 'find here',
-    body: 'Batik frocks, flower frocks and sarongs, chosen by hand in Sri Lanka and brought to families in Qatar. Tell us what you are looking for — we will find it on the next trip.',
-    primaryCta: 'Ask on WhatsApp',
-    secondaryCta: 'See what we bring',
-    whatsappMessage: `${ASK} I'm looking for something specific — can you help me find it?`,
-    // Describes the photograph currently in `public/brand/hero.webp`. If that
-    // file is swapped for a different garment, this line has to move with it -
-    // alt text that describes the previous image is worse than none, because a
-    // screen reader states it as fact and a search engine indexes it as one.
+    sinhala: 'අපේ කම',
+    title: 'The clothes that remember you.',
+    /**
+     * The one word in the headline set in the accent colour. It has to appear
+     * in `titleLines` on the homepage verbatim or nothing is highlighted.
+     */
+    titleAccent: 'remember',
+    body: 'Colour you already know. Cloth that holds the heat. Cut for the life you live now — selected in Sri Lanka, worn wherever you are.',
+    primaryCta: 'View collections',
+    secondaryCta: 'Start a conversation',
+    image: '/brand/hero-1.webp',
     imageAlt:
-      'A woman in a floral-print frock in blush, gold and green, standing in soft daylight against a cream wall',
-    scrollCue: 'Scroll',
-  },
+      'A woman in an ivory textured crop top and long skirt with gold bangles, against a panelled cream wall.',
+    /**
+     * THE HEADLINE'S ROTATING HALF, AND ITS PICTURE.
+     *
+     * The pair above is the resting state - `titleAccent` and `image` are what
+     * the hero shows before anything moves and what it returns to. These are the
+     * alternates, played once each in this order and then dropped. Empty this
+     * array and the hero is exactly the static one it used to be; nothing else
+     * has to change.
+     *
+     * THE SLOT IS NARROWER THAN IT LOOKS, so read this before adding a word. It
+     * only accepts verbs where THE CLOTHES ACT ON YOU, in the plain register the
+     * rest of the copy uses. Two obvious-sounding candidates are already ruled
+     * out: `trust` reverses the relationship - the customer trusts the clothes,
+     * and the manifesto says so outright - and `love` is precisely the
+     * sentimentality the note above bans. What is here:
+     *
+     * - `remember` - memory of home, and the sentence the house actually means.
+     * - `know`     - "You already know how this cloth behaves in the heat."
+     * - `find`     - the manifesto's thesis: distance closed, the clothes reach
+     *                you rather than you reaching them.
+     *
+     * Three is deliberate. A fourth would be the weakest of the four and would
+     * cost the other three their point.
+     *
+     * THE WORD IS LINE-FINAL IN `titleLines`, which is why swapping it never
+     * moves anything: the slot is sized to the longest word and a shorter one
+     * simply leaves rag after it. Put the rotating word anywhere but the end of
+     * its line and every swap will reflow the headline.
+     */
+    rotation: [
+      {
+        word: 'know',
+        image: '/brand/hero-2.webp',
+        imageAlt: 'A man in a black cotton formal shirt and dark trousers in a bright office.',
+        /*
+          THE CARD ROTATES WITH THE PICTURE, and it has to. It is laid over the
+          photograph in the corner, so a reader takes it as a caption on whatever
+          is behind it whether it claims to be one or not - and a card naming a
+          blush floral frock over a man in a black shirt is the kind of detail
+          that makes a whole site feel unfinished.
 
-  marquee: [
-    'Hand-dyed batik',
-    'Sourced to order',
-    'Delivered across Qatar',
-    'Any size, just ask',
-    'Family-run',
-  ],
-
-  /**
-   * The reassurance strip. Two of the three carry a figure nobody has confirmed,
-   * so they render with `TODO_FIGURE` rather than a number somebody invented.
-   */
-  benefits: [
-    {
-      icon: 'truck',
-      title: 'Free delivery in Qatar',
-      body: `On every order over QAR ${TODO_FIGURE}. Anywhere from Doha to Al Shamal.`,
-    },
-    {
-      icon: 'scissors',
-      title: 'Made and picked to order',
-      body: 'Nothing is bought in bulk and pushed. We buy what you actually asked for.',
-    },
-    {
-      icon: 'heart',
-      title: 'Regulars pay less',
-      body: `${TODO_FIGURE}% off from your ${TODO_FIGURE} order onward. We remember who you are.`,
-    },
-  ],
-
-  statement: {
-    eyebrow: 'Why we exist',
-    // Split into lines so each can be revealed behind its own mask.
-    lines: [
-      'We do not guess what',
-      'you want and hope it',
-      'sells. You tell us,',
-      'and we go and find it.',
+          Every piece named here exists in `catalog.ts` and its link resolves.
+          The wording is drawn from that entry's own `subtitle` and
+          `description` rather than written fresh, so the hero cannot drift away
+          from what the catalogue says about the same garment.
+        */
+        featured: {
+          quote: '“The Pettah shirt — long sleeve in a quiet dobby, cut to stay in the waistband.”',
+          href: '/pieces/pettah-shirt',
+        },
+      },
+      {
+        word: 'find',
+        image: '/brand/hero-4.webp',
+        imageAlt: 'A woman in a teal cotton shirt and dark trousers against a plain plaster wall.',
+        featured: {
+          quote: '“The Colombo set — light cloth, a clean line, a trouser cut for this weather.”',
+          href: '/pieces/colombo-set',
+        },
+      },
     ],
-    body: 'Most of what we bring back started as somebody sending us a photo and asking whether it was possible.',
+    /**
+     * The card laid over the hero photograph. It names a piece that genuinely
+     * exists in `catalog.ts` (`nimali-frock`) rather than an invented one, so
+     * the first thing the page says about a product is true.
+     */
+    featured: {
+      eyebrow: 'Featured piece',
+      quote: '“The Nimali frock — a small blush print on cream cotton, cut for the heat.”',
+      href: '/pieces/nimali-frock',
+    },
   },
-
+  /**
+   * The argument the whole site rests on, and the one place it is made outright.
+   *
+   * THE CUSTOMER IS NOT BEING PERSUADED, THEY ARE BEING REACHED. They already
+   * know this clothing and already rate it - that is the premise, and it is why
+   * there is no quality argument here at all. Telling someone their own wardrobe
+   * is good is condescension; the only useful thing to tell them is that they
+   * can have it again. Every beat is written from inside their knowledge.
+   *
+   * WHAT IT DELIBERATELY DOES NOT SAY, and this is the part to preserve if the
+   * copy is ever rewritten:
+   *
+   * - Nothing about price, affordability, or what anything costs. The reason
+   *   this business exists is access, not a discount, and framing it as the
+   *   cheaper option would insult the customer and undersell the clothes.
+   * - No competitor named or ranked. `It does not travel` is a fact about
+   *   distance, not a swipe at whatever is on the shelves locally.
+   * - No artisans, looms, wax or heritage. That is the romance a fashion site
+   *   reaches for when it has nothing specific to say, and this house has
+   *   something specific to say.
+   *
+   * `Distance is the only thing standing between you and it` is the sentence the
+   * whole section exists to deliver. The house is not introducing anybody to
+   * anything - it is closing a gap.
+   */
+  manifesto: {
+    eyebrow: 'The idea',
+    sinhala: 'අපේ කම',
+    /** Two lines, broken by hand - `SplitReveal` masks one per line. */
+    lines: ['The clothes you trust.', 'Wherever you are now.'],
+    /**
+     * Three beats, in the order the argument actually runs: what the customer
+     * already knows, what stands in their way, what this house does about it.
+     *
+     * NOT A CRAFT STORY. Earlier drafts kept sliding into artisans, wax and
+     * looms, which is the romance a fashion site reaches for by default and is
+     * NOT this business. Nobody here is being sold a heritage narrative - they
+     * already know this clothing and already trust it. The section's whole job
+     * is to say: you know it, you cannot get it, we bring it. Keep it there.
+     */
+    beats: [
+      {
+        title: 'The standard is not sentiment',
+        body: 'Sri Lanka has woven and traded cotton for a thousand years, and its modern industry is the only one in Asia to have ratified all twenty-seven ILO conventions — the reason the most audited labels in the world finish their garments there. That is the industry these clothes come out of.',
+      },
+      {
+        title: 'You are not being introduced',
+        body: 'Weaving on the island runs back to the sixth century BC, and patterns like katuru mala and bota pata are still in use, kept by the National Handloom Centre and by village workshops largely run by women. You already know how this cloth behaves in the heat. Nothing here needs explaining to you.',
+      },
+      {
+        title: 'It is made to stay there',
+        body: 'Clothing made for the domestic market rarely leaves it, and no amount of searching from abroad changes that. We select against the standard you would apply yourself — cloth, cut, finish — and bring each edit over whole, the way it deserves to arrive.',
+      },
+    ],
+  },
+  arrivals: {
+    eyebrow: 'Just in',
+    title: 'New arrivals',
+    body: 'A first reading of the season. More will follow; these are the ones we would start with.',
+  },
   collections: {
-    eyebrow: 'What we bring',
-    title: 'Three things, done properly',
-    body: 'We are not trying to carry everything. These are what people in Qatar keep asking us for, and what we know how to source well.',
-    items: [
-      {
-        slug: 'batik-frock',
-        index: '01',
-        eyebrow: 'Hand-dyed',
-        title: 'Batik frocks',
-        body: 'Wax-resist dyed by hand, so no two are identical. Cotton weights that survive a Doha summer.',
-        image: '/brand/edit-batik-frock.webp',
-        imageAlt: 'A hand-dyed batik frock in indigo and gold',
-        whatsappMessage: `${ASK} I'm looking for a batik frock.`,
-      },
-      {
-        slug: 'flower-frock',
-        index: '02',
-        eyebrow: 'Printed',
-        title: 'Flower frocks',
-        body: 'The small-print floral frocks people grew up with, in adult and children’s sizes.',
-        image: '/brand/edit-flower-frock.webp',
-        imageAlt: 'A Sri Lankan flower frock in blush and cream',
-        whatsappMessage: `${ASK} I'm looking for a flower frock.`,
-      },
-      {
-        slug: 'sarong',
-        index: '03',
-        eyebrow: 'Everyday',
-        title: 'Sarongs',
-        body: 'Batik, handloom and plain — worn at home, on the beach, or wrapped as a skirt.',
-        image: '/brand/edit-sarong.webp',
-        imageAlt: 'A batik sarong in indigo and gold, wrapped as a long skirt',
-        whatsappMessage: `${ASK} I'm looking for a sarong.`,
-      },
-    ],
+    eyebrow: 'The wardrobe',
+    title: 'Six ways in.',
+    body: 'Occasion, office, and the days between. The current edit — not the whole house.',
   },
-
-  lookbook: {
-    eyebrow: 'Lookbook',
-    title: 'Recent pieces',
-    body: 'A few of the things we have brought back. Ask about anything you see — or send a photo of something you have seen elsewhere.',
-    items: [
-      {
-        image: '/brand/look-1.webp',
-        alt: 'Seated, wearing a batik frock beside a shuttered window',
-        caption: 'Batik frock',
-      },
-      {
-        image: '/brand/look-2.webp',
-        alt: 'Walking in a flowing flower frock along a shaded colonnade',
-        caption: 'Flower frock',
-      },
-      {
-        image: '/brand/look-3.webp',
-        alt: 'Close detail of hands adjusting a batik sarong at the waist',
-        caption: 'Batik sarong',
-      },
-    ],
-    cta: 'Ask about a piece',
-    whatsappMessage: `${ASK} I saw a piece on your site I'd like to ask about.`,
+  selected: {
+    eyebrow: 'From the edit',
+    title: 'Selected pieces',
+    body: 'A short list, photographed as they are worn. Ask after any of them.',
   },
-
   /**
-   * The batik process, and the section that earns the brand its claim. Real
-   * craft, described accurately: wax-resist dyeing, not weaving.
+   * The dark split panel between the product sections and the journal.
+   *
+   * Deliberately NOT a craft story. The reference design this borrows its shape
+   * from ran "Woven by hand, worn with pride" over a row of artisan statistics -
+   * 120+ partners, 18 years, 9,000+ pieces woven. This house does not weave
+   * anything. It chooses cloth other people made and carries it to Qatar, so the
+   * verb is `chosen`, and the numbers are not typed in here: two are counted from
+   * `catalog.ts` where the page renders them, and the third is `TODO_FIGURE`
+   * until the owner fills it. "9,000+ pieces woven" is precisely the invented
+   * claim this project has already refused once.
    */
-  craft: {
-    eyebrow: 'The craft',
-    title: 'Wax, dye, and a great deal of patience',
-    body: 'Batik is not printed. The pattern is drawn in hot wax, the cloth is dyed around it, and the wax is boiled away to reveal what was protected. Repeat for every colour. The fine cracks in the pattern are where wax broke and dye crept in — the mark of the real thing, not a flaw.',
-    steps: [
+  house: {
+    eyebrow: 'How we choose',
+    /** Author-chosen line breaks, as `SplitReveal` expects - see manifesto. */
+    titleLines: ['Chosen by hand,', 'worn without ceremony.'],
+    body: 'We do not weave the cloth. We choose it — piece by piece, from the makers whose work already belongs in a Sri Lankan wardrobe — and carry it to Qatar. What arrives is a short, deliberate edit rather than a warehouse: cloth that holds the heat, colour that already feels known, a cut for the life you live now.',
+    image: '/brand/detail-batik.webp',
+    imageAlt:
+      'A close view of indigo batik cloth, the wax-resist crackle visible across the weave.',
+    /** Labels only. The figures beside them are counted on the page. */
+    stats: {
+      collections: 'Edits in the house',
+      pieces: 'Pieces in the current edit',
+      /** Blank until the owner fills it, like every other `TODO_FIGURE`. */
+      years: 'Years bringing pieces over',
+    },
+  },
+  journal: {
+    eyebrow: 'Notes',
+    title: 'How the clothes live.',
+    body: 'On cloth, cut, and the hours they are made for. Not a catalogue — a point of view.',
+  },
+  close: {
+    eyebrow: 'The atelier',
+    title: 'Tell us what you are looking for.',
+    body: 'There is no basket yet. There is a conversation — fabric, size, occasion — and we take it from there.',
+    cta: 'Write on WhatsApp',
+    note: 'Replies during Qatar business hours.',
+  },
+  about: {
+    eyebrow: 'The house',
+    sinhala: 'අපේ කම',
+    title: 'A piece of home, worn.',
+    dek: 'Ceylon Collection is a small house that finds Sri Lankan clothing worth keeping, and makes it easier to reach.',
+    sections: [
       {
-        number: '01',
-        title: 'Drawn in wax',
-        body: 'Hot wax is traced onto raw cotton with a tjanting, by hand, one line at a time.',
-        image: '/brand/craft-wax.webp',
-        imageAlt: 'Hands drawing hot wax onto stretched white cotton with a copper tjanting',
+        title: 'What we look for',
+        body: 'Cloth with a hand. Colour that already belongs. A cut that knows the climate. We are not interested in a souvenir of the island, or in a winter idea of luxury worn in the heat. The pieces we bring are the ones a person who grew up with this wardrobe would still choose.',
       },
       {
-        number: '02',
-        title: 'Dyed around it',
-        body: 'The cloth goes into the dye. Everything the wax covered stays as it was.',
-        image: '/brand/craft-dye.webp',
-        imageAlt: 'Indigo-dyed cotton being lifted from a dye vat',
+        title: 'Who it is for',
+        body: 'Anyone who wants clothing with a point of view. If you already know these colours, they will feel like recognition. If you do not, they will feel like a discovery — distinctive without asking you to wear someone else’s memory.',
       },
       {
-        number: '03',
-        title: 'Boiled clean',
-        body: 'The wax is boiled out and the pattern appears, crackle and all.',
-        image: '/brand/detail-batik.webp',
-        imageAlt: 'Macro detail of finished batik showing the characteristic crackle veining',
+        title: 'How it works',
+        body: 'There is no basket yet. You write, we talk about fabric, size, occasion, and we take it from there. The conversation is the atelier.',
       },
     ],
   },
-
-  how: {
-    eyebrow: 'How it works',
-    title: 'You describe it. We find it.',
-    body: 'We do not hold a warehouse. We buy against what people have actually asked for, which is why we can find the specific thing rather than sell you the nearest thing.',
-    steps: [
-      {
-        number: '01',
-        title: 'Tell us what you want',
-        body: 'A photo, a description, a size, an occasion. A screenshot from someone else’s wedding is genuinely the most useful thing you can send.',
-      },
-      {
-        number: '02',
-        title: 'We source it in Sri Lanka',
-        body: 'We take your request to the batik houses and markets we buy from, and come back with what is actually available and what it costs in QAR.',
-      },
-      {
-        number: '03',
-        title: 'It reaches you in Qatar',
-        body: 'You confirm before we buy. Nothing is ordered on your behalf until you have seen it and agreed the price.',
-      },
-    ],
-  },
-
-  /**
-   * Offers. Every figure is a placeholder on purpose - see TODO_FIGURE.
-   * The artwork behind each card is generated; all of this text is real HTML.
-   */
-  offers: {
-    eyebrow: 'Offers',
-    title: 'Worth knowing before you ask',
-    body: 'Straightforward, and applied on WhatsApp when we quote you — there is no code to remember.',
-    items: [
-      {
-        slug: 'delivery',
-        kicker: 'Delivery',
-        headline: 'Free across Qatar',
-        detail: `On orders over QAR ${TODO_FIGURE}. Below that, delivery is a flat QAR ${TODO_FIGURE}.`,
-        image: '/brand/offer-delivery.webp',
-        tone: 'navy',
-        cta: 'Ask about delivery',
-        whatsappMessage: `${ASK} Can you tell me about delivery?`,
-      },
-      {
-        slug: 'loyalty',
-        kicker: 'Regulars',
-        headline: `${TODO_FIGURE}% off, always`,
-        detail: `From your ${TODO_FIGURE} order onward, on everything. No card, no points — we already know your number.`,
-        image: '/brand/offer-loyalty.webp',
-        tone: 'rose',
-        cta: 'Ask about the discount',
-        whatsappMessage: `${ASK} I've ordered before — can you tell me about the regulars' discount?`,
-      },
-      {
-        slug: 'seasonal',
-        kicker: 'Seasonal',
-        headline: `${TODO_FIGURE}% off for Avurudu`,
-        detail: `On orders placed before ${TODO_FIGURE}. Ask early — the buying trip fills up.`,
-        image: '/brand/offer-seasonal.webp',
-        tone: 'gold',
-        cta: 'Ask about the offer',
-        whatsappMessage: `${ASK} I'd like to ask about the seasonal offer.`,
-      },
-    ],
-  },
-
-  enquire: {
-    eyebrow: 'Ask for a piece',
-    title: 'What are you looking for?',
-    body: 'Send a photo or just describe it. We will tell you honestly whether we can find it, roughly what it will cost, and when the next trip is.',
-    cta: 'Start on WhatsApp',
-    whatsappMessage: `${ASK} I'm looking for something specific — can you help me find it?`,
-    note: 'We reply to messages ourselves, usually the same day.',
-  },
-
   footer: {
-    blurb:
-      'Hand-dyed Sri Lankan batik, flower frocks and sarongs, sourced to order for families in Qatar.',
+    sinhala: 'අපේ කම',
+    line: 'Sri Lankan style, made for you.',
+    /** Labels the footer's social row. The channels live in `social.ts`. */
+    social: 'Follow the house',
+    /**
+     * THREE COLUMNS, AND NO LINK APPEARS IN TWO OF THEM. The old pair of columns
+     * held five links between them of which only three went anywhere new -
+     * `Enquire > WhatsApp` repeated the button directly above it, and
+     * `The current edit` was `/collections` under a second name. A directory
+     * whose entries overlap teaches a reader that the footer is decoration.
+     *
+     * That is also why there is no `Ask on WhatsApp` line under `Ordering`,
+     * tempting as it looks: the enquire button sits in the same footer,
+     * larger and harder to miss, and pointing a directory entry at a
+     * destination the block beside it already owns is the same duplication
+     * in a new coat.
+     *
+     * Every `/policies/*` link resolves to a real page - see `policies.ts`. Add
+     * a link here only alongside the page it opens.
+     */
     columns: [
       {
-        heading: 'What we bring',
+        title: 'Explore',
         links: [
-          { label: 'Batik frocks', href: '#collections' },
-          { label: 'Flower frocks', href: '#collections' },
-          { label: 'Sarongs', href: '#collections' },
+          { href: '/collections', label: 'Collections' },
+          { href: '/journal', label: 'Journal' },
+          { href: '/about', label: 'The house' },
         ],
       },
       {
-        heading: 'About',
+        title: 'Ordering',
         links: [
-          { label: 'The craft', href: '#craft' },
-          { label: 'How it works', href: '#how' },
-          { label: 'Offers', href: '#offers' },
+          { href: '/policies/how-to-order', label: 'How to order' },
+          { href: '/policies/delivery', label: 'Delivery' },
+          { href: '/policies/returns', label: 'Returns and exchanges' },
         ],
       },
       {
-        heading: 'Talk to us',
-        links: [{ label: 'WhatsApp', href: whatsappLink(ASK) }],
+        title: 'Legal',
+        links: [
+          { href: '/policies/privacy', label: 'Privacy policy' },
+          { href: '/policies/terms', label: 'Terms of use' },
+        ],
       },
     ],
-    location: 'Doha, Qatar',
+    legal: 'Selected in Sri Lanka. Worn beyond the island.',
+    /**
+     * The one fact the legal bar carries beyond the copyright line. It is a
+     * statement about where the business operates, not an address - the house
+     * has no shopfront to send anyone to, and inventing one to fill the corner
+     * would be the same class of mistake as inventing an offer figure.
+     */
+    region: 'Sri Lanka to Qatar',
+    /** Sends the reader back up a long page. `#top` needs no target element. */
+    backToTop: 'Back to top',
   },
 } as const;

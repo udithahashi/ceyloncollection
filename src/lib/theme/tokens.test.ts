@@ -295,9 +295,9 @@ describe('the two design systems stay apart', () => {
   it('keeps the brand pairing on the public site', () => {
     const { typeface } = themes.public;
 
-    expect(typeface.display).toContain('Cormorant Garamond');
-    expect(typeface.body).toContain('Jost');
-    expect(typeface.label).toContain('Marcellus');
+    expect(typeface.display).toContain('Fraunces');
+    expect(typeface.body).toContain('Manrope');
+    expect(typeface.label).toContain('Outfit');
   });
 
   it('rounds the corners of the back office and squares the public site', () => {

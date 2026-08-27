@@ -11,7 +11,7 @@ import { cn } from '@/lib/cn';
  *
  * Geometry is theme-driven. In the back office that means the 36px tall,
  * 6px-cornered, sentence-case button every dashboard user already knows how to
- * read; on the public site the same component becomes square with Marcellus in
+ * read; on the public site the same component becomes square with Outfit in
  * wide uppercase. `label-caps` and `rounded-control` are where that flip lives.
  *
  * Every variant carries a 1px border, filled or not, so swapping between them

@@ -81,9 +81,8 @@ export default async function DesignFoundationsPage() {
             </div>
 
             <p className="border-t border-line-subtle pt-4 text-xs text-ink-secondary">
-              The brand pairing — Cormorant Garamond, Jost and Marcellus — is reserved for the
-              public site. A tool you work in all day is easier to read in a face designed for
-              interfaces.
+              The brand pairing — Fraunces, Manrope and Outfit — is reserved for the public site. A
+              tool you work in all day is easier to read in a face designed for interfaces.
             </p>
           </CardContent>
         </Card>

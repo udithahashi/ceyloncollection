@@ -1,8 +1,11 @@
 'use client';
 
-import { useEffect, useRef, type ElementType, type ReactNode } from 'react';
+import { useLayoutEffect, useRef, type ElementType, type ReactNode } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+/** See the note on `SplitReveal`: the hidden start is applied before paint. */
+const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : () => {};
 
 /**
  * Scroll-triggered entrance animation.
@@ -20,27 +23,67 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
  * JavaScript - and the CSSOM is not what `style-src` governs. No nonce plumbing
  * is needed here, and none should be added.
  *
- * REDUCED MOTION IS HANDLED TWICE, ON PURPOSE
- * `globals.css` already forces every animation and transition to ~0s under
- * `prefers-reduced-motion`, but that only neuters the movement - a `from` state of
- * `opacity: 0` set by JavaScript would simply stick, leaving invisible text. So
- * this checks the media query itself and skips the animation entirely, which
- * leaves the content in its natural, visible state.
+ * THE RESTING STATE IS VISIBLE; THE HIDING HAPPENS BEFORE PAINT
+ * A plain `useEffect` runs after the browser has painted, so `gsap.fromTo`
+ * applying `opacity: 0` there means the server-rendered content is visible for
+ * the gap between first paint and hydration and then vanishes to animate in -
+ * on a slow device, long enough to see content appear, disappear, replay.
+ *
+ * The tempting fix is a static `opacity-0 translate-y-7` class in the markup.
+ * That was tried, and it trades a cosmetic flash for content that is invisible
+ * unless a JavaScript animation finishes - see the long version on
+ * `SplitReveal`, where the mask made the same choice erase a headline outright.
+ * A `useLayoutEffect` gets both: it runs before paint, so there is no flash, and
+ * the markup keeps a visible resting state, so a visitor whose JavaScript never
+ * runs still reads the page.
+ *
+ * `gsap.fromTo()`, not `gsap.from()`: `.from()` infers its end state from the
+ * target's current computed style. That is correct now the resting state is the
+ * visible one, but naming both ends explicitly costs nothing and does not
+ * quietly break if a starting class is ever reintroduced.
+ *
+ * REDUCED MOTION SIMPLY RETURNS. There is nothing to undo - the content is
+ * already in its resting position - so no `opacity: 1` rescue is needed.
+ *
+ * `stagger` animates `element.children` rather than the element itself. Nothing
+ * passes it today; it needs no special handling here now that hiding is done in
+ * JavaScript against whichever targets the tween is given.
+ *
+ * ANYTHING ALREADY ON SCREEN WHEN JAVASCRIPT TAKES OVER PLAYS IMMEDIATELY
+ * This is the important one, and it is not an optimisation - it is what stops
+ * visible text from sitting there invisible.
+ *
+ * `start: 'top 85%'` assumes the element is below the fold at load, so scrolling
+ * it into that zone is the cue. Two things break that assumption. The hero's copy
+ * column can run taller than `min-h-[calc(100dvh-7.6875rem)]` - measured at 934px
+ * against a 777px floor on a 1440x900 window, because a min-height is a floor and
+ * not a cap - which pushed the primary call to action below the trigger line. And
+ * every page has a band between 85% of the viewport and the fold itself: content
+ * there is plainly visible to the reader and still waiting on a scroll event.
+ *
+ * That was survivable when a missed trigger merely left content un-animated. It
+ * is not survivable now that the static `opacity-0` class above starts it hidden
+ * in the HTML: a trigger that does not fire leaves a permanent blank. So the
+ * effect measures the element against the viewport and, if any part of it is
+ * already on screen, skips ScrollTrigger and plays on mount.
+ *
+ * `onLoad` remains as an explicit override for a caller that knows its content is
+ * part of the initial view and would rather say so than rely on the measurement -
+ * the hero uses it. Below-the-fold content is untouched by both and still waits
+ * for the scroll, which is the whole point of the effect.
  */
 gsap.registerPlugin(ScrollTrigger);
 
 type RevealProps = {
   children: ReactNode;
-  /** Which element to render. Defaults to a plain div. */
   as?: ElementType;
   className?: string;
-  /**
-   * Animate direct children in sequence instead of the container as one block.
-   * Use for card grids and lists; leave off for a single block of prose.
-   */
   stagger?: boolean;
-  /** Seconds to wait before starting, for sequencing against a neighbour. */
   delay?: number;
+  /** Skip ScrollTrigger and play on mount - for content that is always part of
+   *  the initial view (the hero), where a scroll-position gate can end up never
+   *  firing without the user scrolling first. */
+  onLoad?: boolean;
 };
 
 export function Reveal({
@@ -49,48 +92,55 @@ export function Reveal({
   className,
   stagger = false,
   delay = 0,
+  onLoad = false,
 }: RevealProps) {
   const container = useRef<HTMLElement>(null);
 
-  useEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     const element = container.current;
     if (!element) return;
 
+    // Nothing to undo: the markup already renders the content in place.
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
-    // `gsap.context` scopes every tween to this element and gives one revert()
-    // that cleans up the ScrollTriggers too - without it, React's strict-mode
-    // double-invoke in development leaves a second dead trigger behind.
+    // Measured before the tween is built, while the element is still where the
+    // browser laid it out. `top < innerHeight` catches anything with any part of
+    // itself on screen, including the band below the 85% trigger line that is
+    // visible but would otherwise wait for a scroll that may never come.
+    const box = element.getBoundingClientRect();
+    const alreadyOnScreen = box.top < window.innerHeight && box.bottom > 0;
+    const playOnMount = onLoad || alreadyOnScreen;
+
     const ctx = gsap.context(() => {
       const targets = stagger ? Array.from(element.children) : element;
 
-      gsap.from(targets, {
-        opacity: 0,
-        y: 24,
-        duration: 0.7,
-        ease: 'power2.out',
-        delay,
-        stagger: stagger ? 0.12 : 0,
-        // Strips the inline opacity/transform once the reveal has finished, so
-        // the element ends up in its natural CSS state rather than carrying a
-        // permanent `style="opacity: 1; transform: ..."` that would then fight
-        // any hover or responsive rule defined in the stylesheet.
-        clearProps: 'opacity,transform',
-        scrollTrigger: {
-          trigger: element,
-          // Starts when the element's top reaches 85% down the viewport: far
-          // enough in to feel deliberate, early enough that nothing is still
-          // fading while the reader is already looking at it.
-          start: 'top 85%',
-          once: true,
-        },
-      });
+      gsap.fromTo(
+        targets,
+        { opacity: 0, y: 28 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.85,
+          ease: 'power3.out',
+          delay,
+          stagger: stagger ? 0.1 : 0,
+          scrollTrigger: playOnMount
+            ? undefined
+            : {
+                trigger: element,
+                start: 'top 85%',
+                once: true,
+              },
+        }
+      );
     }, element);
 
     return () => ctx.revert();
-  }, [stagger, delay]);
+  }, [stagger, delay, onLoad]);
 
   return (
+    // No hidden class - the layout effect above applies the starting state
+    // before paint, so content stays readable if that never runs.
     <Tag ref={container} className={className}>
       {children}
     </Tag>

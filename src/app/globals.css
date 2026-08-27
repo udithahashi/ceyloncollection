@@ -203,9 +203,9 @@
   --chart-7: #6d433f;
   --chart-8: #345f86;
 
-  --typeface-display: var(--font-cormorant), 'Cormorant Garamond', Georgia, serif;
-  --typeface-body: var(--font-jost), 'Jost', ui-sans-serif, system-ui, sans-serif;
-  --typeface-label: var(--font-marcellus), 'Marcellus', Georgia, serif;
+  --typeface-display: var(--font-fraunces), 'Fraunces', 'Times New Roman', serif;
+  --typeface-body: var(--font-manrope), 'Manrope', ui-sans-serif, system-ui, sans-serif;
+  --typeface-label: var(--font-outfit), 'Outfit', ui-sans-serif, system-ui, sans-serif;
 
   --corner-control: 0;
   --corner-panel: 0;
@@ -366,15 +366,15 @@
    * headings that want positive tracking rather than negative.
    */
   [data-theme='public'] body {
-    font-size: 1rem;
-    font-weight: 300;
-    line-height: 1.6;
+    font-size: 1.0625rem;
+    font-weight: 400;
+    line-height: 1.65;
   }
 
   [data-theme='public'] :is(h1, h2, h3, h4) {
-    font-weight: 500;
-    letter-spacing: 0.01em;
-    line-height: 1.15;
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    line-height: 1.08;
   }
 
   /* One visible focus style everywhere, meeting the 3:1 non-text requirement.
@@ -433,8 +433,36 @@
   line-height: 1;
 }
 
+/**
+ * Hides a scroll container's scrollbar without disabling the scrolling itself.
+ *
+ * ONLY use this where something else advertises that the content scrolls - the
+ * arrivals rail pairs it with prev/next buttons and a deliberate sliver of the
+ * next tile showing at the edge. A hidden scrollbar with no replacement cue is
+ * just content nobody finds.
+ *
+ * The container must also stay reachable from a keyboard, which a native
+ * scrollbar gave for free: put `tabindex="0"` and a label on it, or the arrow
+ * keys have nothing to scroll.
+ */
+@utility no-scrollbar {
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 /** Tabular figures, so digits line up in tables and metrics. */
 @utility numeric {
   font-variant-numeric: tabular-nums;
   font-feature-settings: 'tnum';
+}
+
+/**
+ * Sinhala, for the few words the public site sets in it. A language face, not
+ * a theme role - it does not flip with the admin pairing.
+ */
+@utility sinhala {
+  font-family: var(--font-sinhala), 'Noto Serif Sinhala', serif;
 }

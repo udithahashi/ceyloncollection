@@ -2,6 +2,30 @@
 
 Where the public site's imagery came from, and how to make more that matches.
 
+## August 2026 campaign (current public site)
+
+A second shoot, after the homepage was cleared and rebuilt around අපේ කම.
+Character anchors were generated from the existing Souls (Maya, Viana, Skyler)
+plus a new male likeness (Arun), then passed as `--image` into
+`nano_banana_pro` for the fashion frames. Promotional ground: `gpt_image_2`.
+
+| Asset           | Character | Notes                                   |
+| --------------- | --------- | --------------------------------------- |
+| `hero`          | Maya      | Flower frock, plaster interior          |
+| `flower-frocks` | Maya      | Collection + Nimali piece               |
+| `galle-wax`     | Maya      | Batik frock                             |
+| `batik-sarong`  | Arun      | Men’s sarong, worn rather than arranged |
+| `womens-cotton` | Skyler    | Harbour tee                             |
+| `mens-cotton`   | Arun      | Fort tee                                |
+| `womens-office` | Viana     | Colombo set                             |
+| `mens-office`   | Arun      | Pettah shirt                            |
+| `offer-april`   | —         | GPT Image 2 campaign ground             |
+
+Prompts live in `reference/generated-raw/<name>.txt`. The previous batik-led
+set (`edit-*`, `look-*`, `craft-*`) is still on disk and used for journal/craft.
+
+---
+
 ## The rule
 
 Images for this project are generated with **Higgsfield**, and the owner's

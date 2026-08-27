@@ -1,32 +1,23 @@
 'use client';
 
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
-import { Menu, MessageCircle, X } from 'lucide-react';
+import Link from 'next/link';
+import { Menu, X } from 'lucide-react';
 
 import { cn } from '@/lib/cn';
+
+import { EnquireLink } from './enquire-link';
+import { LogoMark } from './logo-mark';
+import { SocialLinks } from './social-links';
 
 type NavItem = { label: string; href: string };
 
 /**
- * The phone navigation.
+ * Full-screen phone navigation.
  *
- * The previous revision hid the nav below `lg` and offered nothing in its
- * place, which on a site whose audience is almost entirely on phones meant no
- * navigation at all for almost everyone. This is that gap closed.
- *
- * A full-screen panel rather than a slide-in drawer: at this size the page has
- * four destinations and one action, and a panel that owns the whole screen is
- * easier to hit and easier to leave than a sheet with a dismiss target.
- *
- * The behaviour that makes it a real dialog rather than a div that appears:
- * focus moves into it on open and returns to the trigger on close, `Escape`
- * closes it, focus is trapped while it is open, and the page behind cannot
- * scroll. Each of those is the kind of thing that is invisible when present and
- * obvious the moment it is missing.
- *
- * Deliberately CSS transitions, not GSAP: this has to work identically whether
- * or not the animation library loaded, and a menu that fails to open is a much
- * worse bug than a menu that opens without flourish.
+ * CSS transitions, not GSAP: a menu that fails to open is a worse bug than a
+ * menu that opens without flourish. Focus trap, Escape, and body-scroll lock
+ * are what make it a dialog rather than a div that appears.
  */
 export function MobileNav({
   items,
@@ -51,9 +42,6 @@ export function MobileNav({
     const panel = panelRef.current;
     if (!panel) return;
 
-    // Stop the page behind scrolling while the panel owns the screen. Restoring
-    // the previous value rather than clearing it matters if anything else ever
-    // locks scrolling too.
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
 
@@ -73,9 +61,6 @@ export function MobileNav({
 
       if (event.key !== 'Tab') return;
 
-      // Trap: without this, tabbing walks out of the panel and into the page
-      // behind it, which a sighted keyboard user cannot see and a screen reader
-      // user cannot explain.
       const elements = focusable();
       if (elements.length === 0) return;
 
@@ -111,7 +96,7 @@ export function MobileNav({
         aria-label="Open menu"
         className="inline-flex size-11 items-center justify-center text-ink-primary lg:hidden"
       >
-        <Menu aria-hidden="true" className="size-5" />
+        <Menu aria-hidden="true" className="size-5" strokeWidth={1.5} />
       </button>
 
       <div
@@ -120,66 +105,56 @@ export function MobileNav({
         role="dialog"
         aria-modal="true"
         aria-label="Menu"
-        // Inert when closed, so a panel that is not on screen cannot still be
-        // tabbed into or announced by a screen reader. React 19 takes this as a
-        // real boolean - an empty string reads as `false` and warns.
         inert={!open}
-        // WHETHER THIS PANEL IS VISIBLE IS A DISCRETE STATE, NOT AN ANIMATION.
-        // An earlier version faded the whole panel in, which meant the primary
-        // navigation on a phone only became usable once a CSS transition had
-        // finished. Transitions are throttled in a backgrounded tab and dropped
-        // entirely under some accessibility settings, and a menu that sometimes
-        // does not appear is a far worse failure than one that appears without
-        // ceremony. So the panel itself is simply shown or hidden; only the
-        // links inside it animate, and they animate from a visible page.
         className={cn(
           'fixed inset-0 z-100 flex-col bg-surface-page lg:hidden',
           open ? 'flex' : 'hidden'
         )}
       >
-        <div className="flex items-center justify-end px-6 py-5">
+        <div className="flex items-center justify-between px-6 py-5">
+          <LogoMark />
           <button
             type="button"
             onClick={close}
             aria-label="Close menu"
             className="inline-flex size-11 items-center justify-center text-ink-primary"
           >
-            <X aria-hidden="true" className="size-5" />
+            <X aria-hidden="true" className="size-5" strokeWidth={1.5} />
           </button>
         </div>
 
         <nav aria-label="Main" className="flex flex-1 flex-col justify-center px-8">
-          <ul className="flex flex-col gap-2">
+          <ul className="flex flex-col">
             {items.map((item, index) => (
-              <li key={item.href}>
-                <a
+              <li key={item.href} className="border-t border-line-subtle">
+                <Link
                   href={item.href}
                   onClick={close}
                   style={{ transitionDelay: open ? `${120 + index * 60}ms` : '0ms' }}
                   className={cn(
-                    'block py-3 font-display text-4xl text-ink-primary',
-                    'transition-[opacity,transform] duration-500 ease-out',
+                    'block py-5 font-display text-[2.4rem] leading-none text-ink-primary',
+                    'transition-[opacity,transform] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]',
                     open ? 'translate-y-0 opacity-100' : 'translate-y-3 opacity-0'
                   )}
                 >
                   {item.label}
-                </a>
+                </Link>
               </li>
             ))}
           </ul>
         </nav>
 
         <div className="border-t border-line-subtle p-8">
-          <a
-            href={whatsappHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={close}
-            className="inline-flex min-h-12 w-full items-center justify-center gap-2 bg-action-primary px-6 label-caps text-xs text-action-on-primary"
-          >
-            <MessageCircle aria-hidden="true" className="size-4" />
-            Ask on WhatsApp
-          </a>
+          <EnquireLink href={whatsappHref} className="w-full">
+            Enquire on WhatsApp
+          </EnquireLink>
+
+          {/*
+            The drawer is where a phone gets these - the header set is `lg:` and
+            up. `-ml-3` pulls the first 44px hit area back so the mark lines up
+            with the button's left edge above it rather than sitting proud.
+          */}
+          <SocialLinks className="mt-6 -ml-3" />
         </div>
       </div>
     </>

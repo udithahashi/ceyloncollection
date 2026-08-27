@@ -39,37 +39,20 @@ export function SmoothScroll() {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
     const lenis = new Lenis({
-      // Just enough weight to feel considered, not so much that the page feels
-      // like it is catching up with the reader.
       duration: 1.05,
       easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-      // Touch devices already have their own momentum scrolling, and layering
-      // ours on top is what makes smooth-scroll libraries feel broken on phones.
       smoothWheel: true,
       syncTouch: false,
-      /*
-       * NOT OPTIONAL ON THIS PAGE, despite reading like a nicety.
-       *
-       * Lenis takes ownership of scroll position, and a native anchor jump moves
-       * the browser without telling it - so the two disagree and the page snaps
-       * back or simply does not move. Every piece of navigation here is an
-       * anchor: the four header links, both mobile-drawer and footer links, and
-       * the hero's "See what we bring". Without this the menu looks fine and
-       * does nothing, which is the worst kind of broken.
-       */
       anchors: true,
     });
 
     lenis.on('scroll', ScrollTrigger.update);
 
     const raf = (time: number) => {
-      // GSAP's ticker reports seconds; Lenis expects milliseconds.
       lenis.raf(time * 1000);
     };
 
     gsap.ticker.add(raf);
-    // GSAP smooths out frame-rate spikes by default, which fights an animation
-    // being driven off real scroll position.
     gsap.ticker.lagSmoothing(0);
 
     return () => {

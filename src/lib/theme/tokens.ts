@@ -401,11 +401,15 @@ const publicSite: ThemeTokens = {
   },
   status: LIGHT_STATUS,
   chart: adminLight.chart,
-  /** The pairing from the reference homepage. */
+  /**
+   * The public pairing: Fraunces for headlines (soft optical serif), Manrope
+   * for reading, Outfit for tracked labels. Chosen to feel like a contemporary
+   * fashion house rather than a heritage reprint - see fonts.ts.
+   */
   typeface: {
-    display: "var(--font-cormorant), 'Cormorant Garamond', Georgia, serif",
-    body: "var(--font-jost), 'Jost', ui-sans-serif, system-ui, sans-serif",
-    label: "var(--font-marcellus), 'Marcellus', Georgia, serif",
+    display: "var(--font-fraunces), 'Fraunces', 'Times New Roman', serif",
+    body: "var(--font-manrope), 'Manrope', ui-sans-serif, system-ui, sans-serif",
+    label: "var(--font-outfit), 'Outfit', ui-sans-serif, system-ui, sans-serif",
   },
   /** Square throughout. Corners are part of the brand's signature. */
   corner: {

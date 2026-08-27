@@ -16,25 +16,22 @@ import '../globals.css';
  *
  * `data-theme="public"` is hardcoded, not read from the theme cookie. The
  * light/dark switch belongs to the back office, where someone works for hours;
- * a brand's shop window looks like the brand, and nothing else. That attribute
- * is what swaps the entire palette, the corner radii, the shadow treatment and
- * the three editorial typefaces in one go - see `src/lib/theme/tokens.ts`.
+ * a brand's shop window looks like the brand, and nothing else.
  */
 
 /**
- * EVERY PAGE UNDER THIS LAYOUT MUST RENDER DYNAMICALLY. See the long note in
- * `(public)/page.tsx` for why, and copy the `await connection()` line into any
- * new public page. A prerendered page here ships with no CSP nonce and the
- * browser refuses all of its JavaScript.
+ * EVERY PAGE UNDER THIS LAYOUT MUST RENDER DYNAMICALLY. Copy the
+ * `await connection()` line into any new public page. A prerendered page here
+ * ships with no CSP nonce and the browser refuses all of its JavaScript.
  */
 export const metadata: Metadata = {
   metadataBase: new URL(env.APP_URL),
   title: {
-    default: 'Ceylon Collection · Sri Lankan clothing, delivered in Qatar',
+    default: 'Ceylon Collection · Sri Lankan clothing, worn wherever you are',
     template: '%s · Ceylon Collection',
   },
   description:
-    'Sri Lankan sarees, frocks and occasion wear, sourced to order for families in Qatar. Tell us what you are looking for on WhatsApp and we will find it on the next trip.',
+    'Sri Lankan colour, cut, and cloth — selected with care. Flower frocks, batik, cotton, and officewear, brought closer.',
   applicationName: 'Ceylon Collection',
   openGraph: {
     type: 'website',
