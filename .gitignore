@@ -31,11 +31,17 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # env files - never commit real secrets.
-# .env.example and docker/.env.production.example are committed on purpose so
-# required variables are documented; both must only ever contain placeholders.
+# .env.example, docker/.env.production.example and docker/.env.data.example are
+# committed on purpose so required variables are documented; all three must only
+# ever contain placeholders.
 .env*
 !.env.example
 !docker/.env.production.example
+!docker/.env.data.example
+
+# TLS material for the data tier (docker/compose.data.yml). The private key of
+# the database and cache; generated on the VPS and never anywhere else.
+docker/certs/
 
 # vercel
 .vercel

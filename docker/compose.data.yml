@@ -1,0 +1,167 @@
+# The data tier on its own: PostgreSQL, Redis, and the nightly backup.
+#
+# WHEN TO USE THIS INSTEAD OF compose.prod.yml
+# `compose.prod.yml` runs everything on one VPS - app included - and nothing it
+# starts is reachable from outside the Docker network. That is the better
+# arrangement and the one this repository is built around.
+#
+# This file is for the other case, documented in docs/DEPLOY-HOSTINGER.md: the
+# app runs on Hostinger's managed Node.js hosting, so the database and cache
+# have to answer it across the public internet. Everything unusual below
+# follows from that one fact.
+#
+#   docker compose --env-file .env.data -f docker/compose.data.yml up -d
+#
+# Copy docker/.env.data.example to .env.data at the repo root (git-ignored) and
+# fill it in first.
+#
+# THE CERTIFICATES ARE SELF-SIGNED, ON PURPOSE.
+# Let's Encrypt was the obvious choice and is the wrong one here. Its
+# certificates expire every 90 days, and a renewal that succeeds but never
+# reaches these two containers takes the site down three months after anyone
+# last thought about it. A self-signed certificate valid for ten years, pinned
+# in the app by its own bytes, has no renewal to forget and verifies more
+# strictly than a public CA would: only this exact certificate is accepted,
+# not any certificate any CA anywhere was talked into issuing.
+#
+# Generate it with the command in docs/DEPLOY-HOSTINGER.md, Phase 2.
+
+name: ceyloncollection-data
+
+services:
+  db:
+    image: postgres:17
+    restart: unless-stopped
+    # Not the n8n stack's postgres:16. Sharing that one would tie this
+    # business's data to n8n's upgrade schedule and put both in a single
+    # blast radius; 17 is also what the migrations, compose.prod.yml and the
+    # `backup` service below were written against, and a pg_dump older than
+    # its server produces a backup that only looks like it worked.
+    command:
+      [
+        "postgres",
+        "-c",
+        "ssl=on",
+        "-c",
+        "ssl_cert_file=/certs/server.crt",
+        "-c",
+        "ssl_key_file=/certs/server.key",
+      ]
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-ceylon}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-ceyloncollection}
+      # scram-sha-256 rather than the default md5: the password never crosses
+      # the wire in a form worth capturing, which matters more now that the
+      # wire is the public internet.
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
+      # The database itself stays in UTC, same as local dev. The app converts
+      # to Asia/Qatar for display and for grouping reports by day.
+      TZ: UTC
+      PGTZ: UTC
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./certs:/certs:ro
+    ports:
+      # 6432, not 5432. It does not stop anyone who is looking for you, but it
+      # removes you from every untargeted scan of the default port, and it
+      # costs nothing. Note the n8n stack already has 5432 bound to
+      # 127.0.0.1 - this must not collide with it.
+      - "6432:5432"
+    healthcheck:
+      test:
+        ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ceylon} -d ${POSTGRES_DB:-ceyloncollection}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks: [data]
+
+  cache:
+    image: redis:8-alpine
+    restart: unless-stopped
+    command: [
+        "redis-server",
+        # `--port 0` disables the plaintext listener completely. Without it
+        # Redis keeps answering unencrypted on 6379 and one careless firewall
+        # rule exposes an unauthenticated-by-default database to the internet.
+        "--port",
+        "0",
+        "--tls-port",
+        "6380",
+        "--tls-cert-file",
+        "/certs/server.crt",
+        "--tls-key-file",
+        "/certs/server.key",
+        "--tls-ca-cert-file",
+        "/certs/server.crt",
+        # The client presents no certificate of its own; the password is the
+        # credential, and TLS is what stops it being readable in transit.
+        "--tls-auth-clients",
+        "no",
+        "--requirepass",
+        "${REDIS_PASSWORD}",
+        "--appendonly",
+        "yes",
+        "--save",
+        "60",
+        "1",
+      ]
+    volumes:
+      - cache_data:/data
+      - ./certs:/certs:ro
+    ports:
+      - "6380:6380"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "redis-cli",
+          "--tls",
+          "--cacert",
+          "/certs/server.crt",
+          "-p",
+          "6380",
+          "-a",
+          "${REDIS_PASSWORD}",
+          "--no-auth-warning",
+          "ping",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks: [data]
+
+  # Nightly pg_dump with bounded retention, identical in behaviour to the one
+  # in compose.prod.yml. It matters more here, not less: with the app hosted
+  # elsewhere, this VPS holds the only copy of the business's data.
+  #
+  # docs/DEPLOYMENT.md has the restore drill. Run it once, now, rather than
+  # finding out during an incident whether these files restore.
+  backup:
+    image: postgres:17
+    restart: unless-stopped
+    entrypoint: ["/bin/sh", "/scripts/backup-db.sh"]
+    environment:
+      PGHOST: db
+      PGUSER: ${POSTGRES_USER:-ceylon}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: ${POSTGRES_DB:-ceyloncollection}
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-14}
+      BACKUP_INTERVAL_SECONDS: ${BACKUP_INTERVAL_SECONDS:-86400}
+    volumes:
+      - ../scripts/backup-db.sh:/scripts/backup-db.sh:ro
+      - backups:/backups
+    depends_on:
+      db:
+        condition: service_healthy
+    networks: [data]
+
+networks:
+  data:
+    name: ceyloncollection_data
+
+volumes:
+  db_data:
+  cache_data:
+  backups:

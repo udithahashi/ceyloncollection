@@ -44,6 +44,39 @@ const secret = (name: string) =>
       `${name} is still the placeholder from .env.example - replace it with a real generated secret`
     );
 
+/**
+ * A PEM certificate, accepted either as-is or base64-encoded.
+ *
+ * The base64 form exists because a certificate is a multi-line value and the place it
+ * has to be typed is a hosting panel's single-line environment variable field. Whether
+ * such a field preserves newlines is not something to find out at boot, in production,
+ * from an error about a malformed certificate - so both spellings are accepted and the
+ * distinction is made here, once, by looking at the bytes rather than by asking.
+ *
+ * Anything that is neither is rejected at startup rather than at first connection.
+ */
+const pemCertificate = (name: string) =>
+  z
+    .string()
+    .optional()
+    .transform((value, ctx) => {
+      if (value === undefined || value.trim() === '') return undefined;
+
+      const trimmed = value.trim();
+      if (trimmed.includes('-----BEGIN CERTIFICATE-----')) return trimmed;
+
+      // Not PEM, so it should be base64 of PEM. Decoding garbage yields garbage
+      // rather than throwing, hence the second check.
+      const decoded = Buffer.from(trimmed, 'base64').toString('utf8');
+      if (decoded.includes('-----BEGIN CERTIFICATE-----')) return decoded.trim();
+
+      ctx.addIssue({
+        code: 'custom',
+        message: `${name} must be a PEM certificate (starting with -----BEGIN CERTIFICATE-----), or that same PEM base64-encoded`,
+      });
+      return z.NEVER;
+    });
+
 /** An IANA timezone name that this runtime actually knows about. */
 const timezone = z
   .string()
@@ -107,6 +140,22 @@ export const envSchema = z
 
     REDIS_URL: z.string().optional(),
     DISABLE_REDIS: envBoolean(false),
+
+    /**
+     * The certificate Redis presents, when it is one a public CA did not sign.
+     *
+     * Only needed for the split deployment in docs/DEPLOY-HOSTINGER.md, where the app
+     * and the cache are on different machines and `rediss://` crosses the internet
+     * between them. That deployment uses a self-signed certificate on purpose - it
+     * never expires out from under the site the way a 90-day one does - and Node
+     * verifies against the system CA store, which has never heard of it. Supplying it
+     * here is what turns "cannot verify" into "verified, and only this one is
+     * accepted": stricter than a public CA, because no other certificate is trusted.
+     *
+     * Unset everywhere else. On the all-in-one VPS the cache is on a private Docker
+     * network and `redis://` never leaves it.
+     */
+    REDIS_CA_CERT: pemCertificate('REDIS_CA_CERT'),
 
     BETTER_AUTH_SECRET: secret('BETTER_AUTH_SECRET'),
     BETTER_AUTH_URL: baseUrl,

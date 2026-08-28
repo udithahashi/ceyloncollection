@@ -10,16 +10,16 @@ Docker. Read [Phase 0](#phase-0---what-this-costs-you) before choosing.
 
 Work through the phases in order. Each one ends with something you can check.
 
-| Phase                                                        | You end up with                             |
-| ------------------------------------------------------------ | ------------------------------------------- |
-| [0. What this costs you](#phase-0---what-this-costs-you)     | A decision, made knowingly                  |
-| [1. Get a green build](#phase-1---get-a-green-build)         | Hostinger builds without errors             |
-| [2. PostgreSQL on the VPS](#phase-2---postgresql-on-the-vps) | A database reachable over TLS               |
-| [3. Redis on the VPS](#phase-3---redis-on-the-vps)           | A cache reachable over TLS                  |
-| [4. Create the schema](#phase-4---create-the-schema)         | Tables, taxonomy, and your owner account    |
-| [5. Domain and SSL](#phase-5---domain-and-ssl)               | `https://ceyloncollection.qa` serving pages |
-| [6. Verify](#phase-6---verify)                               | Proof it is really working                  |
-| [7. Day to day](#phase-7---day-to-day)                       | How to deploy from now on                   |
+| Phase                                                                 | You end up with                             |
+| --------------------------------------------------------------------- | ------------------------------------------- |
+| [0. What this costs you](#phase-0---what-this-costs-you)              | A decision, made knowingly                  |
+| [1. Get a green build](#phase-1---get-a-green-build)                  | Hostinger builds without errors             |
+| [2. Data tier on the VPS](#phase-2---postgresql-and-redis-on-the-vps) | PostgreSQL and Redis, both over TLS         |
+| [3. Point the app at them](#phase-3---point-the-app-at-them)          | The app connecting to both                  |
+| [4. Create the schema](#phase-4---create-the-schema)                  | Tables, taxonomy, and your owner account    |
+| [5. Domain and SSL](#phase-5---domain-and-ssl)                        | `https://ceyloncollection.qa` serving pages |
+| [6. Verify](#phase-6---verify)                                        | Proof it is really working                  |
+| [7. Day to day](#phase-7---day-to-day)                                | How to deploy from now on                   |
 
 ---
 
@@ -275,145 +275,158 @@ next. **Phase 1 is done when the build is green.**
 
 ---
 
-## Phase 2 - PostgreSQL on the VPS
+## Phase 2 - PostgreSQL and Redis on the VPS
 
-Your DNS is already right: `db.ceyloncollection.qa` and `cache.ceyloncollection.qa`
-point at the VPS (`169.58.73.97`), and `@` plus `www` point at Hostinger. Those two
-subdomains exist so each service can hold a **real Let's Encrypt certificate** - with a
-trusted certificate, `postgres` and `ioredis` verify it against the system CA store with
-no code changes and no `rejectUnauthorized: false`.
+Phases 2 and 3 were written before anyone had looked at the VPS. Now that we have, they
+collapse into one: both services come up from a single compose file, and the certificate
+work they each described turns out to be the same certificate.
 
-All of this phase happens over SSH on the VPS.
+**What is already on that machine** (Ubuntu 24.04, Docker 29.6.2): an n8n stack of three
+containers - `n8n-caddy-1` holding ports 80 and 443, `n8n-n8n-1`, and `n8n-postgres-1`
+running **postgres:16-alpine bound to 127.0.0.1 only**. No Redis. No firewall - `ufw` is
+inactive. No certbot.
 
-### 2.1 Get certificates for both hostnames
+**We do not reuse n8n's PostgreSQL.** It is version 16 where this project's migrations,
+`compose.prod.yml` and the backup service all assume 17, and a `pg_dump` older than its
+server produces a backup that only looks like it worked. Sharing it would also tie the
+business's data to n8n's upgrade schedule and put both in one blast radius. A second
+PostgreSQL costs about 30MB of RAM at rest.
 
-**If the VPS already runs this repo's Caddy container**, let Caddy do it. Add to
-`docker/Caddyfile`:
+### 2.1 Two corrections to what this document used to say
 
-```caddyfile
-db.ceyloncollection.qa, cache.ceyloncollection.qa {
-	respond "" 404
-}
-```
+Both would have caused real damage. They are stated plainly because the earlier version
+of this file is what someone might have already followed.
 
-Reload Caddy. It obtains and renews both automatically, storing them in the `caddy_data`
-volume under
-`/data/caddy/certificates/acme-v02.api.letsencrypt.org-directory/<hostname>/`. Mount that
-volume read-only into the `db` and `cache` containers.
+**`sudo ufw enable` with no SSH rule locks you out of the machine.** The firewall
+defaults to denying inbound, your SSH session is inbound, and it is dropped the moment
+the rule takes effect - with no way back in short of the provider's console. **Always
+allow 22 first.**
 
-**If it does not**, use certbot (port 80 must be free while it runs):
+**And `ufw` does not control Docker's published ports anyway.** Docker writes its own
+iptables rules in a chain that is traversed _before_ ufw's, so `docker run -p 6432:5432`
+answers the internet whether ufw likes it or not. A `ufw allow 6432` rule alongside it is
+decoration - it neither opens nor closes anything.
 
-```bash
-sudo certbot certonly --standalone -d db.ceyloncollection.qa -d cache.ceyloncollection.qa
-```
+What this means practically: **TLS and the passwords are the security here, not the
+firewall.** The firewall is still worth enabling for everything that is not a published
+Docker port, and it becomes real protection the moment Hostinger tells you a stable
+egress range, because then the rule goes in Docker's own `DOCKER-USER` chain instead.
 
-Certificates land in `/etc/letsencrypt/live/db.ceyloncollection.qa/`.
+### 2.2 One self-signed certificate, valid for ten years
 
-> **Renewal.** These last 90 days. PostgreSQL reloads one with
-> `SELECT pg_reload_conf();`, Redis with `CONFIG SET tls-cert-file <path>`, and both are
-> happy with a container restart. Add one to your renewal hook now, or the site breaks
-> silently in three months.
+Let's Encrypt was this document's original suggestion and it was the wrong call.
+Certificates from it expire every 90 days; a renewal that succeeds but never reaches
+these two containers takes the site down three months after anyone last thought about
+it. It would also mean editing the n8n stack's Caddyfile and sharing Caddy's data volume
+with two containers that cannot read root-owned key files anyway.
 
-### 2.2 Create the role and database
+A self-signed certificate has no renewal to forget, and pinned by its own bytes it
+verifies **more** strictly than a public CA would: exactly one certificate is accepted,
+rather than any certificate any CA in the world was talked into issuing.
 
-```sql
-CREATE ROLE ceylon_app LOGIN PASSWORD '<the db password from Phase 1.4>';
-CREATE DATABASE ceyloncollection OWNER ceylon_app;
-```
-
-### 2.3 Turn on TLS and publish the port
-
-For the official Docker image:
-
-```yaml
-db:
-  image: postgres:17
-  command: >
-    postgres
-    -c ssl=on
-    -c ssl_cert_file=/certs/server.crt
-    -c ssl_key_file=/certs/server.key
-  environment:
-    POSTGRES_HOST_AUTH_METHOD: scram-sha-256
-  volumes:
-    - ./certs:/certs:ro
-  ports:
-    # Deliberately not 5432 - it removes you from every scanner sweeping the
-    # default port. That is obscurity, not security, and it is free.
-    - '6432:5432'
-```
-
-The key file must be mode `600` and owned by uid `999` (postgres inside the image) or the
-server refuses to start:
+On the VPS, in the directory holding this repository:
 
 ```bash
-sudo chown 999:999 certs/server.key certs/server.crt
-sudo chmod 600 certs/server.key
+mkdir -p docker/certs && openssl req -x509 -newkey rsa:4096 -sha256 -days 3650 -nodes -keyout docker/certs/server.key -out docker/certs/server.crt -subj "/CN=db.ceyloncollection.qa" -addext "subjectAltName=DNS:db.ceyloncollection.qa,DNS:cache.ceyloncollection.qa"
 ```
 
-### 2.4 Prove TLS is on before opening the firewall
+One certificate, both hostnames, because one machine answers both. `docker/certs/` is
+git-ignored - that private key must never leave the VPS.
+
+PostgreSQL refuses to start if the key is readable by anyone else, and it runs as uid
+999 inside the image:
 
 ```bash
-psql "postgresql://ceylon_app@127.0.0.1:6432/ceyloncollection?sslmode=require" -c "SELECT ssl FROM pg_stat_ssl WHERE pid = pg_backend_pid();"
+sudo chown 999:999 docker/certs/server.key docker/certs/server.crt && sudo chmod 600 docker/certs/server.key && sudo chmod 644 docker/certs/server.crt
 ```
 
-`t` means encrypted. `f` means the `ssl=on` flags are not taking effect - fix that first.
+### 2.3 Start the data tier
 
-**Phase 2 is done when that query returns `t`.**
+`docker/compose.data.yml` defines PostgreSQL 17 with TLS on port 6432, Redis 8 with TLS
+only on 6380 and the plaintext port switched off entirely, and the same nightly
+`pg_dump` the all-in-one stack runs. Fill in the passwords first:
+
+```bash
+cp docker/.env.data.example .env.data
+```
+
+Generate each password with the command the file names, then:
+
+```bash
+docker compose --env-file .env.data -f docker/compose.data.yml up -d
+```
+
+### 2.4 Prove both are actually encrypted
+
+Never open a port on the strength of a container reporting healthy. For PostgreSQL:
+
+```bash
+docker compose --env-file .env.data -f docker/compose.data.yml exec db psql -U ceylon -d ceyloncollection -c "SELECT ssl, version FROM pg_stat_ssl JOIN pg_stat_activity USING (pid) WHERE pid = pg_backend_pid();"
+```
+
+`t` and a TLS version means encrypted. `f` means the `ssl=on` flags are not taking
+effect, and the port must stay shut until they do.
+
+For Redis, the plaintext port must be **refused**, not merely unused:
+
+```bash
+docker compose --env-file .env.data -f docker/compose.data.yml exec cache redis-cli -p 6379 ping
+```
+
+A connection error is the correct result. A `PONG` means `--port 0` did not apply and
+an unauthenticated Redis is one firewall rule from the internet.
+
+### 2.5 Firewall
+
+SSH first. Every time.
+
+```bash
+sudo ufw allow 22/tcp comment 'ssh - MUST be first or you lose the machine'
+```
+
+```bash
+sudo ufw allow 80/tcp && sudo ufw allow 443/tcp && sudo ufw enable
+```
+
+Ports 6432 and 6380 need no rule: as 2.1 explains, Docker publishes them below ufw's
+level regardless. Leaving them out of the ruleset keeps the rules honest about what they
+actually control.
+
+**Phase 2 is done when `pg_stat_ssl` reports `t` and Redis refuses port 6379.**
 
 ---
 
-## Phase 3 - Redis on the VPS
+## Phase 3 - Point the app at them
 
-Redis has no users by default and its default configuration will talk to anyone. Run it
-with the plain port switched off entirely.
+### 3.1 The certificate the app has to trust
 
-### 3.1 Start it with TLS and a password
+A self-signed certificate is not in any system CA store, so `rediss://` would refuse the
+connection - and refuse it _quietly_, because `src/lib/redis/client.ts` logs Redis
+failures and keeps serving rather than stopping. The app would run with rate limiting
+silently reduced to a per-process in-memory counter.
 
-```yaml
-cache:
-  image: redis:7
-  command: >
-    redis-server
-    --port 0
-    --tls-port 6380
-    --tls-cert-file /certs/server.crt
-    --tls-key-file /certs/server.key
-    --tls-ca-cert-file /certs/server.crt
-    --tls-auth-clients no
-    --requirepass "<the redis password from Phase 1.4>"
-    --appendonly yes
-  volumes:
-    - ./certs:/certs:ro
-    - cache_data:/data
-  ports:
-    - '6380:6380'
-```
-
-`--port 0` is the important line: without it Redis keeps listening unencrypted on 6379
-and one wrong firewall rule exposes it. `--tls-auth-clients no` means the _client_ does
-not present a certificate; the server still presents its own, and the password is the
-credential.
-
-### 3.2 Open the firewall
+`REDIS_CA_CERT` fixes that by trusting exactly that one certificate. Print it:
 
 ```bash
-sudo ufw allow 6432/tcp comment 'postgres for hostinger app'
-sudo ufw allow 6380/tcp comment 'redis for hostinger app'
-sudo ufw enable
+base64 -w 0 docker/certs/server.crt
 ```
 
-Hostinger's Node.js apps do not publish a fixed outbound IP, so you cannot narrow these
-the way you would want to. **Ask Hostinger support whether your plan has a stable egress
-IP or range** - ask about upload persistence (Phase 0) in the same message. If it does,
-replace these with `ufw allow from <that range> to any port 6432` and the equivalent for
-Redis; that one change is worth more than everything else here.
+Base64 because a certificate is multi-line and hPanel's environment variable field is
+not; `@/lib/env` accepts either form and decides by looking at the bytes.
 
-Install `fail2ban` and confirm SSH is key-only. Two internet-facing database ports raise
-the value of getting the rest of the host right.
+### 3.2 Add it in hPanel
 
-**Phase 3 is done when `redis-cli --tls --insecure -h 127.0.0.1 -p 6380 -a '<password>' ping`
-returns `PONG`.**
+| Variable        | Value                             |
+| --------------- | --------------------------------- |
+| `REDIS_CA_CERT` | the single-line base64 from above |
+
+`DATABASE_URL` needs nothing extra - `?sslmode=require` encrypts without needing the
+certificate, because it does not verify the chain. That is a real gap, listed in
+[Known gaps](#known-gaps-with-this-setup), and the reason Redis gets stricter treatment
+than PostgreSQL here is simply that Redis refuses to connect without it while PostgreSQL
+does not.
+
+Save and redeploy. **Phase 3 is done when the runtime log says `redis connected`.**
 
 ---
 
